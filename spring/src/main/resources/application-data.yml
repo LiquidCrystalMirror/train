@@ -1,0 +1,4 @@
+my:
+  jwt_pwd: ${JWT_SECRET:abc123}
+md5:
+  salt: ${MD5_SALT:123(code)}
