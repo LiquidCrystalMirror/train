@@ -1,4 +1,4 @@
 my:
-  jwt_pwd: ${JWT_SECRET:abc123}
+  jwt_pwd: ${JWT_SECRET}
 md5:
-  salt: ${MD5_SALT:123(code)}
+  salt: ${MD5_SALT}

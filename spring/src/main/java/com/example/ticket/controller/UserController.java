@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.ticket.entity.User;
 import com.example.ticket.mapper.UserMapper;
 import com.example.ticket.service.UserService;
+import com.example.ticket.util.PasswordUtil;
 import com.example.ticket.util.RespEntity;
 import io.jsonwebtoken.JwtBuilder;
 import io.jsonwebtoken.Jwts;
@@ -32,6 +33,9 @@ public class UserController {
     
     @Resource
     private UserMapper userMapper;
+    
+    @Resource
+    private PasswordUtil passwordUtil;
 
     @Value("${my.jwt_pwd}")
     private String jwtPwd;
@@ -83,7 +87,7 @@ public class UserController {
         }
 
         // 密码校验
-        if (!user.getPassword().equals(password)) {
+        if (!passwordUtil.verifyPassword(password, user.getPassword())) {
             return new RespEntity(4004, "密码错误", null);
         }
 
@@ -111,6 +115,10 @@ public class UserController {
             user.setRole("user");
         }
 
+        // 对密码进行加密处理
+        String encryptedPassword = passwordUtil.md5WithSalt(user.getPassword());
+        user.setPassword(encryptedPassword);
+        
         user.setCreateTime(LocalDateTime.now());
         userService.save(user);
         user.setPassword(null);
