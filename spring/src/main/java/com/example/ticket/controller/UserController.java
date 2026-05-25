@@ -5,21 +5,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.ticket.entity.User;
 import com.example.ticket.mapper.UserMapper;
 import com.example.ticket.service.UserService;
+import com.example.ticket.util.JwtUtil;
 import com.example.ticket.util.PasswordUtil;
 import com.example.ticket.util.RespEntity;
-import io.jsonwebtoken.JwtBuilder;
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * 用户控制器（完全适配火车售票系统 User 实体）
@@ -36,9 +31,9 @@ public class UserController {
     
     @Resource
     private PasswordUtil passwordUtil;
-
-    @Value("${my.jwt_pwd}")
-    private String jwtPwd;
+    
+    @Resource
+    private JwtUtil jwtUtil;
 
     // ===================== 统计用户数量 =====================
     @GetMapping("/g/allTotal")
@@ -70,20 +65,25 @@ public class UserController {
 
     // ===================== 登录 =====================
     @PostMapping("/login")
-    public RespEntity login(
-            @RequestParam String username,
-            @RequestParam String password,
-            @RequestParam String role) {
+    public RespEntity login(@RequestBody Map<String, String> params) {
+        String account = params.get("account");  // 支持 userId 或 username
+        String password = params.get("password");
 
-        User user = userMapper.selectByUsername(username);
-
-        if (user == null) {
-            return new RespEntity(4001, "用户名或密码错误", null);
+        if (account == null || account.trim().isEmpty()) {
+            return new RespEntity(400, "缺少必要参数：account", null);
+        }
+        if (password == null || password.trim().isEmpty()) {
+            return new RespEntity(400, "缺少必要参数：password", null);
         }
 
-        // 角色校验
-        if (!user.getRole().equals(role)) {
-            return new RespEntity(4002, "角色不匹配", null);
+        // 先尝试按 userId 查询，再按 username 查询
+        User user = userMapper.selectByUserId(account);
+        if (user == null) {
+            user = userMapper.selectByUsername(account);
+        }
+
+        if (user == null) {
+            return new RespEntity(4001, "用户不存在", null);
         }
 
         // 密码校验
@@ -91,10 +91,21 @@ public class UserController {
             return new RespEntity(4004, "密码错误", null);
         }
 
-        // 生成 token
-        String token = generateJwtToken(user);
+        // 生成 token（使用JwtUtil）
+        String token = jwtUtil.generateToken(user);
+        
+        // 安全处理：移除密码字段后再返回
+        User safeUser = new User();
+        safeUser.setUserId(user.getUserId());
+        safeUser.setUsername(user.getUsername());
+        safeUser.setRealName(user.getRealName());
+        safeUser.setIdCard(user.getIdCard());
+        safeUser.setPhone(user.getPhone());
+        safeUser.setRole(user.getRole());
+        safeUser.setCreateTime(user.getCreateTime());
+        
         Map<String, Object> map = new HashMap<>();
-        map.put("user", user);
+        map.put("user", safeUser);
         map.put("token", token);
 
         return new RespEntity(2000, "登录成功", map);
@@ -110,10 +121,12 @@ public class UserController {
             return new RespEntity(4000, "用户名已存在", null);
         }
 
-        // 默认普通用户
-        if (user.getRole() == null) {
-            user.setRole("user");
-        }
+        // 生成随机用户ID
+        String userId = passwordUtil.generateUserId();
+        user.setUserId(userId);
+        
+        // 安全处理：强制设置角色为普通用户，防止越权注册
+        user.setRole("user");
 
         // 对密码进行加密处理
         String encryptedPassword = passwordUtil.md5WithSalt(user.getPassword());
@@ -121,28 +134,41 @@ public class UserController {
         
         user.setCreateTime(LocalDateTime.now());
         userService.save(user);
+        
+        // 返回时包含userId，方便用户记住
         user.setPassword(null);
 
-        return new RespEntity(2000, "注册成功", user);
+        return new RespEntity(2000, "注册成功，请牢记您的用户ID：" + userId, user);
     }
 
-    // ===================== JWT 生成（完全适配你的实体） =====================
-    private String generateJwtToken(User user) {
-        JwtBuilder builder = Jwts.builder();
+    // ===================== 管理员注册 =====================
+    @PostMapping("/admin/reg")
+    public RespEntity adminRegister(@RequestBody User user) {
+        // 检查用户名是否存在
+        User exist = userMapper.selectByUsername(user.getUsername());
 
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("userId", user.getUserId());
-        claims.put("username", user.getUsername());
-        claims.put("realName", user.getRealName());
-        claims.put("phone", user.getPhone());
-        claims.put("role", user.getRole());
+        if (exist != null) {
+            return new RespEntity(4000, "用户名已存在", null);
+        }
 
-        return builder
-                .setClaims(claims)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 86400000))
-                .signWith(SignatureAlgorithm.HS256, jwtPwd)
-                .compact();
+        // 生成随机用户ID
+        String userId = passwordUtil.generateUserId();
+        user.setUserId(userId);
+        
+        // 强制设置为管理员
+        user.setRole("admin");
+
+        // 对密码进行加密处理
+        String encryptedPassword = passwordUtil.md5WithSalt(user.getPassword());
+        user.setPassword(encryptedPassword);
+        
+        user.setCreateTime(LocalDateTime.now());
+        userService.save(user);
+        
+        // 返回时包含userId
+        user.setPassword(null);
+
+        return new RespEntity(2000, "管理员注册成功，请牢记您的用户ID：" + userId, user);
     }
 
     // ===================== 用户修改自己信息 =====================

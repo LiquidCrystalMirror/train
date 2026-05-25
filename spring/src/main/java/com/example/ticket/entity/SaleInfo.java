@@ -13,7 +13,7 @@ public class SaleInfo {
     private Integer saleId;        // 售票记录ID
     private Integer ticketId;      // 车票ID
     private Integer trainId;       // 车次ID
-    private Integer userId;        // 用户ID（删除了乘客信息，只保留userId）
+    private String userId;         // 用户ID（字符串类型）
     private Integer startStationSeq; // 上车点对应的站点序号
     private Integer endStationSeq;   // 下车点对应的站点序号
     private LocalDateTime saleTime;// 购票时间

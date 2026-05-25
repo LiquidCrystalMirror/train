@@ -14,7 +14,7 @@ public class RefundInfo {
     private Integer saleId;       // 售票记录ID
     private Integer ticketId;     // 车票ID
     private Integer trainId;      // 车次ID
-    private Integer userId;       // 用户ID
+    private String userId;        // 用户ID（字符串类型）
     private LocalDateTime refundTime; // 退票时间
     private String refundStatus;  // 退票状态
     private String refundRemark;  // 退票备注

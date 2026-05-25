@@ -75,6 +75,14 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 处理自定义业务异常
+     */
+    @ExceptionHandler(BusinessException.class)
+    public RespEntity handleBusinessException(BusinessException e) {
+        return new RespEntity(e.getCode(), e.getMessage(), null);
+    }
+
+    /**
      * 处理认证授权异常（Token 无效、未登录）
      */
     @ExceptionHandler(RuntimeException.class)

@@ -9,9 +9,9 @@ import java.time.LocalDateTime;
 @Data
 @TableName("user")
 public class User {
-    @TableId(type = IdType.AUTO)
-    private Integer userId;
-    private String username;
+    @TableId(type = IdType.INPUT)
+    private String userId;  // 用户ID：定长随机字符串（如U1234567890）
+    private String username;  // 用户名（唯一）
     private String password;
     private String realName;
     private String idCard;

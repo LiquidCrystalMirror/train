@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员注册 - 火车售票系统</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #999;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+        }
+
+        .message.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block;
+        }
+
+        .message.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block;
+        }
+
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        .warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffc107;
+            color: #856404;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 管理员注册</h1>
+        <p class="subtitle">火车售票系统后台管理</p>
+
+        <div id="message" class="message"></div>
+
+        <div class="warning">
+            ⚠️ 注意：此页面仅用于创建管理员账号，请妥善保管账号信息！
+        </div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label for="username">用户名 *</label>
+                <input type="text" id="username" name="username" required placeholder="请输入用户名（2-20个字符）" minlength="2" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="realName">真实姓名 *</label>
+                <input type="text" id="realName" name="realName" required placeholder="请输入真实姓名">
+            </div>
+
+            <div class="form-group">
+                <label for="idCard">身份证号 *</label>
+                <input type="text" id="idCard" name="idCard" required placeholder="请输入18位身份证号" pattern="\d{17}[\dXx]|\d{15}">
+            </div>
+
+            <div class="form-group">
+                <label for="phone">手机号 *</label>
+                <input type="tel" id="phone" name="phone" required placeholder="请输入11位手机号" pattern="1[3-9]\d{9}">
+            </div>
+
+            <div class="form-group">
+                <label for="password">密码 *</label>
+                <input type="password" id="password" name="password" required placeholder="请输入密码（6-20个字符）" minlength="6" maxlength="20">
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">确认密码 *</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required placeholder="请再次输入密码">
+            </div>
+
+            <button type="submit" class="btn-submit">注册管理员</button>
+        </form>
+
+        <div class="back-link">
+            <a href="/">← 返回登录页</a>
+        </div>
+    </div>
+
+    <script>
+        const form = document.getElementById('registerForm');
+        const messageDiv = document.getElementById('message');
+
+        function showMessage(text, type) {
+            messageDiv.textContent = text;
+            messageDiv.className = `message ${type}`;
+            setTimeout(() => {
+                messageDiv.className = 'message';
+            }, 5000);
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // 获取表单数据
+            const username = document.getElementById('username').value.trim();
+            const realName = document.getElementById('realName').value.trim();
+            const idCard = document.getElementById('idCard').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            // 验证密码一致性
+            if (password !== confirmPassword) {
+                showMessage('两次输入的密码不一致！', 'error');
+                return;
+            }
+
+            // 验证身份证号格式
+            const idCardPattern = /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/;
+            if (!idCardPattern.test(idCard)) {
+                showMessage('身份证号格式不正确！', 'error');
+                return;
+            }
+
+            // 验证手机号格式
+            const phonePattern = /^1[3-9]\d{9}$/;
+            if (!phonePattern.test(phone)) {
+                showMessage('手机号格式不正确！', 'error');
+                return;
+            }
+
+            // 准备提交数据
+            const data = {
+                username: username,
+                realName: realName,
+                idCard: idCard,
+                phone: phone,
+                password: password
+            };
+
+            try {
+                // 使用绝对路径，确保从服务器访问
+                const apiUrl = window.location.origin + '/api/v1/admin/reg';
+                console.log('请求URL:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.code === 2000) {
+                    showMessage('✅ 管理员注册成功！', 'success');
+                    
+                    // 清空表单
+                    form.reset();
+                } else {
+                    showMessage('❌ ' + (result.msg || '注册失败'), 'error');
+                }
+            } catch (error) {
+                console.error('注册错误:', error);
+                
+                // 提供更清晰的错误提示
+                let errorMsg = '网络错误';
+                
+                if (error.message.includes('Failed to fetch')) {
+                    errorMsg = '无法连接到服务器，请检查：<br>' +
+                              '1. 后端服务是否启动（http://localhost:8080）<br>' +
+                              '2. 是否通过服务器访问此页面（不是直接打开文件）<br>' +
+                              '3. 正确的访问地址：http://localhost:8080/admin-register.html';
+                } else {
+                    errorMsg = error.message;
+                }
+                
+                showMessage('❌ ' + errorMsg, 'error');
+            }
+        });
+    </script>
+</body>
+</html>

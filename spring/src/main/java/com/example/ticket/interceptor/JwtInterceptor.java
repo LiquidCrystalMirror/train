@@ -1,18 +1,19 @@
 package com.example.ticket.interceptor;
 
 import com.example.ticket.entity.User;
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.Jwts;
+import com.example.ticket.util.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import javax.annotation.Resource;
+
 @Component
 public class JwtInterceptor implements HandlerInterceptor {
-    @Value("${my.jwt_pwd}")
-    private String jwtpwd;
+    
+    @Resource
+    private JwtUtil jwtUtil;
 
     @Override
     public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) throws Exception {
@@ -28,29 +29,18 @@ public class JwtInterceptor implements HandlerInterceptor {
             return false;
         }
 
+        // 去除 "Bearer " 前缀
         jwt = jwt.substring(7);
-        Claims claims;
-
-        try {
-            claims = Jwts.parser()
-                    .setSigningKey(jwtpwd)
-                    .parseClaimsJws(jwt)
-                    .getBody();
-        } catch (Exception ex) {
+        
+        // 使用JwtUtil解析和验证Token
+        User user = jwtUtil.parseAndValidateToken(jwt);
+        
+        if (user == null) {
             res.getWriter().write("{\"code\":4001,\"msg\":\"凭证无效，过期或被篡改，请重新登录\",\"data\":null}");
             return false;
         }
 
-        // ===================== 完全按照你的 User 实体类赋值 =====================
-        User user = new User();
-        user.setUserId((Integer) claims.get("userId"));          // 用户ID
-        user.setUsername(String.valueOf(claims.get("username"))); // 账号
-        user.setPassword(null);                                   // 密码不赋值
-        user.setRealName(String.valueOf(claims.get("realName"))); // 真实姓名
-        user.setPhone(claims.get("phone") != null ? String.valueOf(claims.get("phone")) : null); // 手机
-        user.setRole(String.valueOf(claims.get("role")));         // 角色 admin/user
-
-        // ===================== 存入request，控制器可直接获取 =====================
+        // 存入request，控制器可直接获取
         req.setAttribute("auth", user);
         return true;
     }

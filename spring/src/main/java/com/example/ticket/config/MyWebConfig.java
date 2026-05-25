@@ -15,9 +15,13 @@ public class MyWebConfig implements WebMvcConfigurer {
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry){
+        // 自定义图片资源映射
         registry.addResourceHandler("/static/imgs/**")
                 .addResourceLocations("file:D:/test-imgs/xw_imgs/");
-        // 这里删掉了多余的 {}
+        
+        // 忽略 favicon.ico 等静态资源请求
+        registry.addResourceHandler("/favicon.ico")
+                .addResourceLocations("classpath:/static/");
     }
 
     @Override
@@ -28,8 +32,8 @@ public class MyWebConfig implements WebMvcConfigurer {
                         "/api/v1/g/**",
                         "/api/v1/login",
                         "/api/v1/reg",
-                        "/api/v1/index",
-                        "/**"
+                        "/api/v1/admin/reg",
+                        "/api/v1/index"
                 );
     }
     @Override

@@ -38,4 +38,25 @@ public interface TrainInfoMapper extends BaseMapper<TrainInfo> {
      */
     @Select("SELECT * FROM train_info WHERE departure_time >= #{departureTime}")
     List<TrainInfo> selectByDepartureTime(@Param("departureTime") LocalDateTime departureTime);
+    
+    /**
+     * 根据起止站点查询车次（需要关联train_station表）
+     * @param startStationId 起点站ID
+     * @param endStationId 终点站ID
+     */
+    @Select("SELECT DISTINCT t.* FROM train_info t " +
+            "INNER JOIN train_station ts1 ON t.train_id = ts1.train_id " +
+            "INNER JOIN train_station ts2 ON t.train_id = ts2.train_id " +
+            "WHERE ts1.station_id = #{startStationId} " +
+            "AND ts2.station_id = #{endStationId} " +
+            "AND ts1.station_seq < ts2.station_seq")
+    List<TrainInfo> selectByStations(@Param("startStationId") Integer startStationId, 
+                                     @Param("endStationId") Integer endStationId);
+    
+    /**
+     * 根据发车时间范围查询车次
+     */
+    @Select("SELECT * FROM train_info WHERE departure_time BETWEEN #{startTime} AND #{endTime}")
+    List<TrainInfo> selectByDepartureTimeRange(@Param("startTime") LocalDateTime startTime,
+                                               @Param("endTime") LocalDateTime endTime);
 }

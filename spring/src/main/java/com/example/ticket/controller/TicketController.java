@@ -34,30 +34,31 @@ public class TicketController {
 
     // 添加车票
     @PostMapping("/add")
-    public String add(@RequestBody TicketInfo ticketInfo) {
+    public RespEntity add(@RequestBody TicketInfo ticketInfo) {
         boolean save = ticketService.save(ticketInfo);
-        return save ? "添加车票成功" : "添加失败";
+        return new RespEntity(2000, save ? "添加车票成功" : "添加失败", null);
     }
 
     // 根据火车ID查车票
     @PostMapping("/train")
-    public List<TicketInfo> getByTrain(@RequestBody Map<String, Integer> params) {
+    public RespEntity getByTrain(@RequestBody Map<String, Integer> params) {
         Integer trainId = params.get("trainId");
-        return ticketInfoMapper.selectByTrainId(trainId);
+        List<TicketInfo> tickets = ticketInfoMapper.selectByTrainId(trainId);
+        return new RespEntity(2000, "查询成功", tickets);
     }
 
     // 修改车票
     @PostMapping("/update")
-    public String update(@RequestBody TicketInfo ticketInfo) {
+    public RespEntity update(@RequestBody TicketInfo ticketInfo) {
         boolean update = ticketService.updateById(ticketInfo);
-        return update ? "修改车票成功" : "修改失败";
+        return new RespEntity(2000, update ? "修改车票成功" : "修改失败", null);
     }
 
     // 删除车票
     @PostMapping("/delete")
-    public String delete(@RequestBody Map<String, Integer> params) {
+    public RespEntity delete(@RequestBody Map<String, Integer> params) {
         Integer id = params.get("id");
         boolean remove = ticketService.removeById(id);
-        return remove ? "删除车票成功" : "删除失败";
+        return new RespEntity(2000, remove ? "删除车票成功" : "删除失败", null);
     }
 }
