@@ -137,7 +137,14 @@ router.beforeEach((to, from) => {
     // 如果已登录，访问登录页则重定向到对应角色的首页
     if (to.path === '/login' && authService.isLoggedIn()) {
       const user = authService.getUser()
-      if (user && user.role === 'admin') {
+      console.log('已登录用户信息:', user)
+      // 如果用户信息不完整，清除并留在登录页
+      if (!user || !user.role) {
+        console.warn('用户信息不完整，清除登录状态')
+        authService.clearAuth()
+        return true
+      }
+      if (user.role === 'admin') {
         return '/admin'
       } else {
         return '/user'
@@ -148,16 +155,27 @@ router.beforeEach((to, from) => {
 
   // 其他路径需要验证登录状态
   if (!authService.isLoggedIn()) {
+    console.log('未登录，重定向到登录页')
     authService.redirectToLogin()
     return false
   }
 
   // 检查角色权限
   const user = authService.getUser()
+  console.log('当前用户角色:', user?.role, '路由要求角色:', to.meta.role)
+  
+  // 如果用户信息不完整，清除登录状态并重定向到登录页
+  if (!user || !user.role) {
+    console.warn('用户信息不完整，清除登录状态')
+    authService.clearAuth()
+    return '/login'
+  }
+  
   if (to.meta.role) {
     // 如果路由需要特定角色，检查用户是否有该角色
-    if (user && user.role !== to.meta.role) {
+    if (user.role !== to.meta.role) {
       // 角色不匹配，重定向到对应角色的首页
+      console.warn('角色不匹配，重定向到对应首页')
       ElMessage.warning('您没有权限访问该页面')
       if (user.role === 'admin') {
         return '/admin'
