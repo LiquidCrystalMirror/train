@@ -1,56 +1,67 @@
 <template>
+  <div class="user-management">
+    <div class="search-bar">
+      <el-form :model="searchForm" class="search-form">
+        <el-row :gutter="10">
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item label="搜索">
+              <el-input v-model="searchForm.find" placeholder="请输入用户名或姓名" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24" :sm="12" :md="8" :lg="6">
+            <el-form-item>
+              <el-button type="primary" @click="findUser">
+                <el-icon><Search /></el-icon>
+                查询
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon><Refresh /></el-icon>
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      
+      <div class="action-buttons">
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          新增用户
+        </el-button>
+      </div>
+    </div>
 
-  <el-form  :model="searchForm" class="search-form">
-    <el-row :gutter="10">
-      <el-col :span="6">
-        <el-form-item label="搜索">
-          <el-input v-model="searchForm.find" placeholder="请输入用户名或姓名" clearable />
-        </el-form-item>
-      </el-col>
-      <el-col :span="6">
-        <el-form-item>
-          <el-button type="primary" @click="findUser">
-            <el-icon><Search /></el-icon>
-            查询
-          </el-button>
-          <el-button @click="handleReset">
-            <el-icon><Refresh /></el-icon>
-            重置
-          </el-button>
-        </el-form-item>
-      </el-col>
-    </el-row>
-  </el-form>
-
-  <el-table :data="tableData" stripe border style="width: 100%">
-    <el-table-column prop="userId" label="ID" width="80" />
-    <el-table-column prop="username" label="用户名" width="150" />
-    <el-table-column prop="realName" label="真实姓名" width="120" />
-    <el-table-column prop="idCard" label="身份证号" width="180" />
-    <el-table-column prop="phone" label="手机号" width="130" />
-    <el-table-column prop="role" label="角色" width="100">
-      <template #default="scope">
-        <el-tag :type="scope.row.role === 'admin' ? 'danger' : 'primary'">
-          {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
-        </el-tag>
-      </template>
-    </el-table-column>
-    <el-table-column prop="createTime" label="创建时间" width="180">
-      <template #default="scope">
-        {{ formatDateTime(scope.row.createTime) }}
-      </template>
-    </el-table-column>
-    <el-table-column label="操作" v-if="isAdmin">
-      <template #default="scope">
-        <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-        <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.userId)">
-          <template #reference>
-            <el-button size="small" type="danger">删除</el-button>
-          </template>
-        </el-popconfirm>
-      </template>
-    </el-table-column>
-  </el-table>
+    <div class="table-container">
+    <el-table :data="tableData" stripe border style="width: 100%;">
+      <el-table-column prop="userId" label="ID" />
+      <el-table-column prop="username" label="用户名" />
+      <el-table-column prop="realName" label="真实姓名" />
+      <el-table-column prop="idCard" label="身份证号" show-overflow-tooltip />
+      <el-table-column prop="phone" label="手机号" />
+      <el-table-column prop="role" label="角色">
+        <template #default="scope">
+          <el-tag :type="scope.row.role === 'admin' ? 'danger' : 'primary'">
+            {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
+          </el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="createTime" label="创建时间" show-overflow-tooltip>
+        <template #default="scope">
+          {{ formatDateTime(scope.row.createTime) }}
+        </template>
+      </el-table-column>
+      <el-table-column label="操作" v-if="isAdmin">
+        <template #default="scope">
+          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+          <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.userId)">
+            <template #reference>
+              <el-button size="small" type="danger">删除</el-button>
+            </template>
+          </el-popconfirm>
+        </template>
+      </el-table-column>
+    </el-table>
+  </div>
 
 
   <el-pagination
@@ -150,7 +161,7 @@ const handleReset=()=>{
 
 const findUser=()=>{
   userAPI.getUserPage(searchForm.value).then((resp)=>{
-    if (resp.code === 2000 && resp.data) {
+    if (resp.code === 200 && resp.data) {
       tableData.value = resp.data.records || [];
       total.value = resp.data.total || 0;
     }
@@ -190,8 +201,8 @@ const handleSave=()=>{
 
 const handleDelete=(id)=>{
   userAPI.deleteUser(id).then((resp)=>{
-    if (resp.code === 2000) {
-      ElMessage.success(resp.msg || '删除成功');
+    if (resp.code === 200) {
+      ElMessage.success(resp.message || '删除成功');
       findUser();
     }
   })
@@ -203,5 +214,38 @@ findUser();
 
 
 <style scoped>
+.user-management {
+  padding: 20px;
+}
 
+.search-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  margin-bottom: 20px;
+}
+
+.search-form {
+  flex: 1;
+}
+
+.action-buttons {
+  margin-left: 20px;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.el-pagination {
+  padding: 16px;
+  text-align: right;
+}
 </style>

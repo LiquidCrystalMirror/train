@@ -1,54 +1,60 @@
 <template>
   <div class="station-management">
-    <el-form :model="searchForm" class="search-form">
-      <el-row :gutter="10">
-        <el-col :span="6">
-          <el-form-item label="站点名称">
-            <el-input v-model="searchForm.name" placeholder="请输入站点名称" clearable />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item>
-            <el-button type="primary" @click="loadData">
-              <el-icon><Search /></el-icon>
-              查询
-            </el-button>
-            <el-button @click="handleReset">
-              <el-icon><Refresh /></el-icon>
-              重置
-            </el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
+    <div class="search-bar">
+      <el-form :model="searchForm" class="search-form">
+        <el-row :gutter="10">
+          <el-col :span="6">
+            <el-form-item label="站点名称">
+              <el-input v-model="searchForm.name" placeholder="请输入站点名称" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item>
+              <el-button type="primary" @click="loadData">
+                <el-icon><Search /></el-icon>
+                查询
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon><Refresh /></el-icon>
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      
+      <div class="action-buttons">
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          新增站点
+        </el-button>
+      </div>
+    </div>
 
-    <el-button type="primary" @click="handleAdd" class="mgb-4">
-      <el-icon><Plus /></el-icon>
-      新增站点
-    </el-button>
-
-    <el-table :data="tableData" stripe border style="width: 100%">
-      <el-table-column prop="stationId" label="ID" width="80" />
-      <el-table-column prop="stationName" label="站点名称" width="200" />
-      <el-table-column prop="createTime" label="创建时间" width="180">
-        <template #default="scope">
-          {{ formatDateTime(scope.row.createTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="250" fixed="right">
-        <template #default="scope">
-          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-button size="small" type="success" @click="handleViewConnections(scope.row)">
-            查看连通
-          </el-button>
-          <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.stationId)">
-            <template #reference>
-              <el-button size="small" type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-container">
+      <el-table :data="tableData" stripe border style="width: 100%;">
+        <el-table-column prop="stationId" label="ID" />
+        <el-table-column prop="stationName" label="站点名称" />
+        <el-table-column prop="createTime" label="创建时间">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.createTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作">
+          <template #default="scope">
+            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-button size="small" type="success" @click="handleViewConnections(scope.row)">
+              查看连通
+            </el-button>
+            <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.stationId)">
+              <template #reference>
+                <el-button size="small" type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <el-dialog :title="form.stationId ? '编辑站点' : '新增站点'" v-model="dialogVisible" width="500px">
       <el-form label-width="100px" :model="form" :rules="rules" ref="formRef">
@@ -96,7 +102,7 @@ const formatDateTime = (dateTime) => {
 const loadData = () => {
   if (searchForm.value.name) {
     StationApi.queryByName(searchForm.value.name).then((resp) => {
-      if (resp.code === 2000 && resp.data) {
+      if (resp.code === 200 && resp.data) {
         tableData.value = resp.data
       }
     }).catch(err => {
@@ -104,7 +110,7 @@ const loadData = () => {
     })
   } else {
     StationApi.listStations().then((resp) => {
-      if (resp.code === 2000 && resp.data) {
+      if (resp.code === 200 && resp.data) {
         tableData.value = resp.data
       }
     }).catch(err => {
@@ -136,7 +142,7 @@ const handleSave = () => {
   formRef.value.validate().then(() => {
     const apiCall = form.value.stationId ? StationApi.updateStation : StationApi.addStation
     apiCall(form.value).then((resp) => {
-      ElMessage.success(resp.msg || '保存成功')
+      ElMessage.success(resp.message || '保存成功')
       dialogVisible.value = false
       loadData()
     }).catch(err => {
@@ -147,7 +153,7 @@ const handleSave = () => {
 
 const handleDelete = (id) => {
   StationApi.deleteStation(id).then((resp) => {
-    ElMessage.success(resp.msg || '删除成功')
+    ElMessage.success(resp.message || '删除成功')
     loadData()
   }).catch(err => {
     ElMessage.error('删除失败')
@@ -167,10 +173,38 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.search-form {
+.station-management {
+  padding: 20px;
+}
+
+.search-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
 }
-.mgb-4 {
-  margin-bottom: 16px;
+
+.search-form {
+  flex: 1;
+}
+
+.action-buttons {
+  margin-left: 20px;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.el-pagination {
+  padding: 16px;
+  text-align: right;
 }
 </style>

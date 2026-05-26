@@ -186,14 +186,14 @@ const handleRegister = async () => {
 
     console.log('注册响应:', response)
 
-    if (response.code === 2000) {
-      ElMessage.success(response.msg || '注册成功')
+    if (response.code === 200) {
+      ElMessage.success(response.message || '注册成功')
       // 延迟跳转，让用户看到成功消息和userId
       setTimeout(() => {
         router.push('/login')
       }, 3000)
     } else {
-      ElMessage.error(response.msg || '注册失败')
+      ElMessage.error(response.message || '注册失败')
     }
   } catch (error) {
     console.error('注册错误:', error)
@@ -202,7 +202,7 @@ const handleRegister = async () => {
       // 服务器返回错误
       console.log('错误状态码:', error.response.status)
       console.log('错误数据:', error.response.data)
-      ElMessage.error(error.response?.data?.msg || `请求失败: ${error.response.status}`)
+      ElMessage.error(error.response?.data?.message || `请求失败: ${error.response.status}`)
     } else if (error.request) {
       // 请求已发送但无响应
       console.log('请求对象:', error.request)

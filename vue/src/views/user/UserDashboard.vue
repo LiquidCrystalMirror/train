@@ -1,6 +1,6 @@
 <template>
-  <el-container class="layout-container" style="height: 100%">
-    <el-header height="40px" class="custom-header">
+  <el-container class="layout-container">
+    <el-header height="60px" class="custom-header">
       <div class="header-left">
         <el-icon class="collapse-icon" @click="toggleMenu">
           <Fold v-if="isCollapse" />
@@ -149,11 +149,17 @@ const handleCommand = (command) => {
 
 <style scoped>
 .layout-container {
-  height: 100vh;
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .main-container {
-  height: calc(100vh - 40px);
+  flex: 1;
+  display: flex;
+  min-height: 0;
 }
 
 .custom-header {

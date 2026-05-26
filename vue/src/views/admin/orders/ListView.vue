@@ -3,44 +3,48 @@
     <el-tabs v-model="activeTab">
       <!-- 售票记录 -->
       <el-tab-pane label="售票记录" name="sales">
-        <el-table :data="salesData" stripe border style="width: 100%">
-          <el-table-column prop="saleId" label="记录ID" width="100" />
-          <el-table-column prop="ticketId" label="车票ID" width="100" />
-          <el-table-column prop="trainId" label="车次ID" width="100" />
-          <el-table-column prop="userId" label="用户ID" width="100" />
-          <el-table-column prop="startStationSeq" label="上车站序号" width="120" />
-          <el-table-column prop="endStationSeq" label="下车站序号" width="120" />
-          <el-table-column prop="saleTime" label="购票时间" width="180">
-            <template #default="scope">
-              {{ formatDateTime(scope.row.saleTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="saleStatus" label="状态" width="100">
-            <template #default="scope">
-              <el-tag :type="scope.row.saleStatus === '已出票' ? 'success' : 'info'">
-                {{ scope.row.saleStatus }}
-              </el-tag>
-            </template>
-          </el-table-column>
-        </el-table>
+        <div class="table-container">
+          <el-table :data="salesData" stripe border style="width: 100%;">
+            <el-table-column prop="saleId" label="记录ID" />
+            <el-table-column prop="ticketId" label="车票ID" />
+            <el-table-column prop="trainId" label="车次ID" />
+            <el-table-column prop="userId" label="用户ID" />
+            <el-table-column prop="startStationSeq" label="上车站序号" />
+            <el-table-column prop="endStationSeq" label="下车站序号" />
+            <el-table-column prop="saleTime" label="购票时间">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.saleTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="saleStatus" label="状态">
+              <template #default="scope">
+                <el-tag :type="scope.row.saleStatus === '已出票' ? 'success' : 'info'">
+                  {{ scope.row.saleStatus }}
+                </el-tag>
+              </template>
+            </el-table-column>
+          </el-table>
+        </div>
       </el-tab-pane>
 
       <!-- 退票记录 -->
       <el-tab-pane label="退票记录" name="refunds">
-        <el-table :data="refundsData" stripe border style="width: 100%">
-          <el-table-column prop="refundId" label="退票ID" width="100" />
-          <el-table-column prop="saleId" label="售票记录ID" width="120" />
-          <el-table-column prop="ticketId" label="车票ID" width="100" />
-          <el-table-column prop="trainId" label="车次ID" width="100" />
-          <el-table-column prop="userId" label="用户ID" width="100" />
-          <el-table-column prop="refundTime" label="退票时间" width="180">
-            <template #default="scope">
-              {{ formatDateTime(scope.row.refundTime) }}
-            </template>
-          </el-table-column>
-          <el-table-column prop="refundStatus" label="退票状态" width="120" />
-          <el-table-column prop="refundRemark" label="备注" />
-        </el-table>
+        <div class="table-container">
+          <el-table :data="refundsData" stripe border style="width: 100%;">
+            <el-table-column prop="refundId" label="退票ID" />
+            <el-table-column prop="saleId" label="售票记录ID" />
+            <el-table-column prop="ticketId" label="车票ID" />
+            <el-table-column prop="trainId" label="车次ID" />
+            <el-table-column prop="userId" label="用户ID" />
+            <el-table-column prop="refundTime" label="退票时间">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.refundTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="refundStatus" label="退票状态" />
+            <el-table-column prop="refundRemark" label="备注" />
+          </el-table>
+        </div>
       </el-tab-pane>
     </el-tabs>
   </div>
@@ -67,8 +71,22 @@ onMounted(() => {
 
 <style scoped>
 .order-management {
-  background: white;
   padding: 20px;
+}
+
+.tabs-container {
+  background: white;
   border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.table-container {
+  padding: 16px;
+}
+
+.el-pagination {
+  padding: 16px;
+  text-align: right;
 }
 </style>

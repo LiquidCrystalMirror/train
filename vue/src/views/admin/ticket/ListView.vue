@@ -1,64 +1,74 @@
 <template>
   <div class="ticket-management">
-    <!-- 搜索表单 -->
-    <el-form :model="searchForm" class="search-form">
-      <el-row :gutter="10">
-        <el-col :span="6">
-          <el-form-item label="车次ID">
-            <el-input v-model="searchForm.find" placeholder="请输入车次ID" clearable />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item>
-            <el-button type="primary" @click="loadData">
-              <el-icon><Search /></el-icon>
-              查询
-            </el-button>
-            <el-button @click="handleReset">
-              <el-icon><Refresh /></el-icon>
-              重置
-            </el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-
-    <!-- 操作按钮 -->
-    <el-button type="primary" @click="handleAdd" class="mgb-4">
-      <el-icon><Plus /></el-icon>
-      新增车票
-    </el-button>
+    <!-- 搜索表单和操作按钮 -->
+    <div class="search-bar">
+      <el-form :model="searchForm" class="search-form">
+        <el-row :gutter="10">
+          <el-col :span="6">
+            <el-form-item label="车次ID">
+              <el-input v-model="searchForm.find" placeholder="请输入车次ID" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item>
+              <el-button type="primary" @click="loadData">
+                <el-icon><Search /></el-icon>
+                查询
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon><Refresh /></el-icon>
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      
+      <!-- 操作按钮 -->
+      <div class="action-buttons">
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          新增车票
+        </el-button>
+      </div>
+    </div>
 
     <!-- 数据表格 -->
-    <el-table :data="tableData" stripe border style="width: 100%">
-      <el-table-column prop="ticketId" label="ID" width="80" />
-      <el-table-column prop="trainId" label="车次ID" width="100" />
-      <el-table-column prop="carriageNumber" label="车厢号" width="100" />
-      <el-table-column prop="seatNumber" label="座位号" width="100" />
-      <el-table-column prop="seatType" label="座位类型" width="120" />
-      <el-table-column prop="price" label="价格" width="100">
-        <template #default="scope">
-          ¥{{ scope.row.price }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="ticketStatus" label="状态" width="100">
-        <template #default="scope">
-          <el-tag :type="scope.row.ticketStatus === 'available' ? 'success' : 'info'">
-            {{ scope.row.ticketStatus === 'available' ? '可售' : '已售' }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="200">
-        <template #default="scope">
-          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.ticketId)">
-            <template #reference>
-              <el-button size="small" type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-container">
+      <el-table :data="tableData" stripe border style="width: 100%;">
+        <el-table-column prop="ticketId" label="ID" />
+        <el-table-column prop="trainId" label="车次ID" />
+        <el-table-column prop="carriageNumber" label="车厢号" />
+        <el-table-column prop="seatNumber" label="座位号" />
+        <el-table-column prop="seatType" label="座位类型">
+          <template #default="scope">
+            {{ getSeatTypeName(scope.row.seatType) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="price" label="价格">
+          <template #default="scope">
+            ¥{{ scope.row.price }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="ticketStatus" label="状态">
+          <template #default="scope">
+            <el-tag :type="scope.row.ticketStatus === 'available' ? 'success' : 'info'">
+              {{ scope.row.ticketStatus === 'available' ? '可售' : '已售' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作">
+          <template #default="scope">
+            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.ticketId)">
+              <template #reference>
+                <el-button size="small" type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <!-- 分页 -->
     <el-pagination
@@ -146,10 +156,24 @@ const rules = {
   price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
 }
 
+const seatTypeMap = {
+  business: '商务座',
+  first: '一等座',
+  second: '二等座',
+  hard: '硬座',
+  soft: '软座',
+  hard_sleeper: '硬卧',
+  soft_sleeper: '软卧'
+}
+
+const getSeatTypeName = (type) => {
+  return seatTypeMap[type] || type
+}
+
 // 加载数据
 const loadData = () => {
   TicketApi.getTicketPage(searchForm.value).then((resp) => {
-    if (resp.code === 2000 && resp.data) {
+    if (resp.code === 200 && resp.data) {
       tableData.value = resp.data.records || []
       total.value = resp.data.total || 0
     }
@@ -217,13 +241,42 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.search-form {
+.ticket-management {
+  padding: 20px;
+}
+
+.search-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
 }
-.mgb-4 {
-  margin-bottom: 16px;
+
+.search-form {
+  flex: 1;
 }
+
+.action-buttons {
+  margin-left: 20px;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
 .mgt-4 {
   margin-top: 16px;
+}
+
+.el-pagination {
+  padding: 16px;
+  text-align: right;
 }
 </style>

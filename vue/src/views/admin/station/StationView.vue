@@ -113,7 +113,7 @@ const goBack = () => {
 
 const loadConnections = () => {
   StationApi.getNeighbors(stationId.value).then((resp) => {
-    if (resp.code === 2000 && resp.data) {
+    if (resp.code === 200 && resp.data) {
       console.log('后端返回的原始数据:', resp.data)
       connectionData.value = resp.data.map(item => ({
         neighborStationId: item.neighborStationId,
@@ -130,7 +130,7 @@ const loadConnections = () => {
 
 const loadAllStations = () => {
   StationApi.listStations().then((resp) => {
-    if (resp.code === 2000 && resp.data) {
+    if (resp.code === 200 && resp.data) {
       allStations.value = resp.data
       filterAvailableStations()
     }
@@ -157,7 +157,7 @@ const handleAddConnection = () => {
   connectionForm.value = {
     neighborStationId: null,
     neighborStationName: '',
-    travelTimeMinutes: 30
+    travelTimeMinutes: 30.0  // 使用浮点数，避免类型转换问题
   }
 }
 
@@ -192,7 +192,7 @@ const handleSaveConnection = () => {
           connectionForm.value.neighborStationId,
           connectionForm.value.travelTimeMinutes
       ).then((resp) => {
-        ElMessage.success(resp.msg || '添加成功')
+        ElMessage.success(resp.message || '添加成功')
         dialogVisible.value = false
         loadConnections()
         loadAllStations()
@@ -205,7 +205,7 @@ const handleSaveConnection = () => {
 
 const handleDeleteConnection = (neighborId) => {
   StationApi.removeConnection(stationId.value, neighborId).then((resp) => {
-    ElMessage.success(resp.msg || '删除成功')
+    ElMessage.success(resp.message || '删除成功')
     loadConnections()
     loadAllStations()
   }).catch(err => {

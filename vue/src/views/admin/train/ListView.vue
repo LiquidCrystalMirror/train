@@ -1,61 +1,67 @@
 <template>
   <div class="train-management">
-    <!-- 搜索表单 -->
-    <el-form :model="searchForm" class="search-form">
-      <el-row :gutter="10">
-        <el-col :span="6">
-          <el-form-item label="车次号">
-            <el-input v-model="searchForm.find" placeholder="请输入车次号" clearable />
-          </el-form-item>
-        </el-col>
-        <el-col :span="6">
-          <el-form-item>
-            <el-button type="primary" @click="loadData">
-              <el-icon><Search /></el-icon>
-              查询
-            </el-button>
-            <el-button @click="handleReset">
-              <el-icon><Refresh /></el-icon>
-              重置
-            </el-button>
-          </el-form-item>
-        </el-col>
-      </el-row>
-    </el-form>
-
-    <!-- 操作按钮 -->
-    <el-button type="primary" @click="handleAdd" class="mgb-4">
-      <el-icon><Plus /></el-icon>
-      新增车次
-    </el-button>
+    <!-- 搜索表单和操作按钮 -->
+    <div class="search-bar">
+      <el-form :model="searchForm" class="search-form">
+        <el-row :gutter="10">
+          <el-col :span="6">
+            <el-form-item label="车次号">
+              <el-input v-model="searchForm.find" placeholder="请输入车次号" clearable />
+            </el-form-item>
+          </el-col>
+          <el-col :span="6">
+            <el-form-item>
+              <el-button type="primary" @click="loadData">
+                <el-icon><Search /></el-icon>
+                查询
+              </el-button>
+              <el-button @click="handleReset">
+                <el-icon><Refresh /></el-icon>
+                重置
+              </el-button>
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      
+      <!-- 操作按钮 -->
+      <div class="action-buttons">
+        <el-button type="primary" @click="handleAdd">
+          <el-icon><Plus /></el-icon>
+          新增车次
+        </el-button>
+      </div>
+    </div>
 
     <!-- 数据表格 -->
-    <el-table :data="tableData" stripe border style="width: 100%">
-      <el-table-column prop="trainId" label="ID" width="80" />
-      <el-table-column prop="trainNumber" label="车次号" width="120" />
-      <el-table-column prop="departureTime" label="发车时间" width="180">
-        <template #default="scope">
-          {{ formatDateTime(scope.row.departureTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="arrivalTime" label="到达时间" width="180">
-        <template #default="scope">
-          {{ formatDateTime(scope.row.arrivalTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column prop="runTime" label="运行时长" width="120" />
-      <el-table-column prop="totalStations" label="站点数" width="100" />
-      <el-table-column label="操作" width="200">
-        <template #default="scope">
-          <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-          <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.trainId)">
-            <template #reference>
-              <el-button size="small" type="danger">删除</el-button>
-            </template>
-          </el-popconfirm>
-        </template>
-      </el-table-column>
-    </el-table>
+    <div class="table-container">
+      <el-table :data="tableData" stripe border style="width: 100%;">
+        <el-table-column prop="trainId" label="ID" />
+        <el-table-column prop="trainNumber" label="车次号" />
+        <el-table-column prop="departureTime" label="发车时间">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.departureTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="arrivalTime" label="到达时间">
+          <template #default="scope">
+            {{ formatDateTime(scope.row.arrivalTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="runTime" label="运行时长" />
+        <el-table-column prop="totalStations" label="站点数" />
+        <el-table-column label="操作">
+          <template #default="scope">
+            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
+            <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.trainId)">
+              <template #reference>
+                <el-button size="small" type="danger">删除</el-button>
+              </template>
+            </el-popconfirm>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
 
     <!-- 分页 -->
     <el-pagination
@@ -147,7 +153,7 @@ const formatDateTime = (dateTime) => {
 // 加载数据
 const loadData = () => {
   TrainApi.getTrainPage(searchForm.value).then((resp) => {
-    if (resp.code === 2000 && resp.data) {
+    if (resp.code === 200 && resp.data) {
       tableData.value = resp.data.records || []
       total.value = resp.data.total || 0
     }
@@ -214,13 +220,42 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.search-form {
+.train-management {
+  padding: 20px;
+}
+
+.search-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   margin-bottom: 20px;
 }
-.mgb-4 {
-  margin-bottom: 16px;
+
+.search-form {
+  flex: 1;
 }
+
+.action-buttons {
+  margin-left: 20px;
+}
+
+.table-container {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
 .mgt-4 {
   margin-top: 16px;
+}
+
+.el-pagination {
+  padding: 16px;
+  text-align: right;
 }
 </style>

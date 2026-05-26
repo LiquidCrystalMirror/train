@@ -61,11 +61,11 @@ const handleSell = () => {
   formRef.value.validate().then(() => {
     loading.value = true
     SaleApi.sellTicket(form.value).then((resp) => {
-      if (resp.code === 2000) {
-        ElMessage.success('售票成功')
+      if (resp.code === 200) {
+        ElMessage.success(resp.message || '售票成功')
         handleReset()
       } else {
-        ElMessage.error(resp.msg || '售票失败')
+        ElMessage.error(resp.message || '售票失败')
       }
     }).catch(err => {
       ElMessage.error('售票失败：' + (err.message || '未知错误'))

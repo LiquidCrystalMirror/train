@@ -1,6 +1,6 @@
 package com.example.ticket.exception;
 
-import com.example.ticket.util.RespEntity;
+import com.example.ticket.util.ApiResult;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
@@ -18,103 +18,103 @@ public class GlobalExceptionHandler {
      * 处理主键冲突、唯一约束冲突（id重复、name重复）
      */
     @ExceptionHandler(DuplicateKeyException.class)
-    public RespEntity handleDuplicateKeyException(DuplicateKeyException e) {
+    public ApiResult<?> handleDuplicateKeyException(DuplicateKeyException e) {
         // 判断是哪个字段冲突
         String message = e.getMessage();
         if (message.contains("PRIMARY")) {
-            return new RespEntity(400, "用户ID已存在", null);
+            return ApiResult.error(400, "用户ID已存在");
         } else if (message.contains("name")) {
-            return new RespEntity(400, "用户名已存在", null);
+            return ApiResult.error(400, "用户名已存在");
         }
-        return new RespEntity(400, "数据已存在", null);
+        return ApiResult.error(400, "数据已存在");
     }
 
     /**
      * 处理数据库完整性约束异常（NOT NULL 等）
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public RespEntity handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+    public ApiResult<?> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
         String message = e.getMessage();
         if (message.contains("NOT NULL")) {
-            return new RespEntity(400, "缺少必要参数", null);
+            return ApiResult.error(400, "缺少必要参数");
         }
-        return new RespEntity(400, "数据完整性错误", null);
+        return ApiResult.error(400, "数据完整性错误");
     }
 
     /**
      * 处理 JSON 解析错误（缺少逗号等格式错误）
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public RespEntity handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
-        return new RespEntity(400, "请求参数格式错误，请检查JSON格式", null);
+    public ApiResult<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
+        return ApiResult.error(400, "请求参数格式错误，请检查JSON格式");
     }
 
     /**
      * 处理参数类型不匹配（如 String 传给 Integer）
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public RespEntity handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
-        return new RespEntity(400, "参数类型错误：" + e.getName() + " 类型不正确", null);
+    public ApiResult<?> handleMethodArgumentTypeMismatchException(MethodArgumentTypeMismatchException e) {
+        return ApiResult.error(400, "参数类型错误：" + e.getName() + " 类型不正确");
     }
 
     /**
      * 处理缺少参数
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
-    public RespEntity handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
-        return new RespEntity(400, "缺少必要参数：" + e.getParameterName(), null);
+    public ApiResult<?> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
+        return ApiResult.error(400, "缺少必要参数：" + e.getParameterName());
     }
 
     /**
      * 处理参数验证失败（配合 @Valid 使用）
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public RespEntity handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
+    public ApiResult<?> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getAllErrors().get(0).getDefaultMessage();
-        return new RespEntity(400, message, null);
+        return ApiResult.error(400, message);
     }
 
     /**
      * 处理自定义业务异常
      */
     @ExceptionHandler(BusinessException.class)
-    public RespEntity handleBusinessException(BusinessException e) {
-        return new RespEntity(e.getCode(), e.getMessage(), null);
+    public ApiResult<?> handleBusinessException(BusinessException e) {
+        return ApiResult.error(e.getCode(), e.getMessage());
     }
 
     /**
      * 处理认证授权异常（Token 无效、未登录）
      */
     @ExceptionHandler(RuntimeException.class)
-    public RespEntity handleRuntimeException(RuntimeException e) {
+    public ApiResult<?> handleRuntimeException(RuntimeException e) {
         String message = e.getMessage();
         
         // 判断是否是认证相关错误
         if (message.contains("未登录") || message.contains("登录已过期")) {
-            return new RespEntity(401, message, null);
+            return ApiResult.error(401, message);
         }
         
         // 判断是否是权限相关错误
         if (message.contains("权限不足")) {
-            return new RespEntity(403, message, null);
+            return ApiResult.error(403, message);
         }
         
         // 判断是否是 Token 相关错误
         if (message.contains("认证") || message.contains("Token")) {
-            return new RespEntity(401, message, null);
+            return ApiResult.error(401, message);
         }
         
         // 其他运行时异常按 500 处理
         e.printStackTrace();
-        return new RespEntity(500, "服务器内部错误：" + message, null);
+        return ApiResult.error(500, "服务器内部错误：" + message);
     }
 
     /**
      * 处理所有其他异常
      */
     @ExceptionHandler(Exception.class)
-    public RespEntity handleException(Exception e) {
+    public ApiResult<?> handleException(Exception e) {
         e.printStackTrace();
-        return new RespEntity(500, "服务器内部错误：" + e.getMessage(), null);
+        return ApiResult.error(500, "服务器内部错误：" + e.getMessage());
     }
 }

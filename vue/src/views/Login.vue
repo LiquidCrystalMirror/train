@@ -103,8 +103,8 @@ const handleLogin = async () => {
   try {
     const response = await loginApi(loginForm)
 
-    if (response.code === 2000) {
-      ElMessage.success('登录成功')
+    if (response.code === 200) {
+      ElMessage.success(response.message || '登录成功')
       // 存储用户信息和token
       localStorage.setItem('user', JSON.stringify(response.data.user))
       localStorage.setItem('token', response.data.token)
@@ -117,7 +117,7 @@ const handleLogin = async () => {
         router.push('/user')
       }
     } else {
-      ElMessage.error(response.msg || '登录失败')
+      ElMessage.error(response.message || '登录失败')
     }
   } catch (error) {
     console.error('登录错误:', error)

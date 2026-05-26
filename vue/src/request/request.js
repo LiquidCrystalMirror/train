@@ -34,12 +34,41 @@ instance.interceptors.request.use(function (config) {
 
 
 instance.interceptors.response.use(function (response) {
-    return response.data;
+    const res = response.data;
+    
+    // 检查后端返回的业务状态码
+    if (res.code !== 200) {
+        console.error('请求错误:', res.message || '未知错误');
+        
+        // 如果是认证错误，跳转到登录页
+        if (res.code === 401) {
+            authService.redirectToLogin();
+        }
+        
+        return Promise.reject(res.message || '请求失败');
+    }
+    
+    // 成功时返回完整的ApiResult对象，包含code、message、data
+    return res;
 }, function (error) {
     console.log(error)
     
-    if (error.response && error.response.status === 401) {
-        authService.redirectToLogin()
+    // HTTP 状态码错误处理
+    if (error.response) {
+        const status = error.response.status;
+        
+        if (status === 401) {
+            authService.redirectToLogin();
+            return Promise.reject('登录已过期，请重新登录');
+        } else if (status === 403) {
+            return Promise.reject('权限不足');
+        } else if (status === 404) {
+            return Promise.reject('请求的资源不存在');
+        } else if (status === 500) {
+            return Promise.reject('服务器内部错误');
+        } else {
+            return Promise.reject('请求失败: ' + status);
+        }
     }
     
     return Promise.reject("服务器异常");

@@ -178,7 +178,7 @@ const handleSearch = () => {
   if (searchForm.value.startStationId && searchForm.value.endStationId) {
     TrainApi.queryByStations(searchForm.value.startStationId, searchForm.value.endStationId)
       .then((resp) => {
-        if (resp.code === 2000) {
+        if (resp.code === 200) {
           trainList.value = resp.data || []
           ElMessage.success(`查询到 ${trainList.value.length} 个车次`)
         }
@@ -191,7 +191,7 @@ const handleSearch = () => {
   else if (searchForm.value.startTime && searchForm.value.endTime) {
     TrainApi.queryByTimeRange(searchForm.value.startTime, searchForm.value.endTime)
       .then((resp) => {
-        if (resp.code === 2000) {
+        if (resp.code === 200) {
           trainList.value = resp.data || []
           ElMessage.success(`查询到 ${trainList.value.length} 个车次`)
         }
@@ -204,7 +204,7 @@ const handleSearch = () => {
   else if (searchForm.value.trainNumber) {
     TrainApi.queryByNumber(searchForm.value.trainNumber)
       .then((resp) => {
-        if (resp.code === 2000) {
+        if (resp.code === 200) {
           trainList.value = resp.data || []
           ElMessage.success(`查询到 ${trainList.value.length} 个车次`)
         }
@@ -235,7 +235,7 @@ const viewTickets = (train) => {
   currentTrainId.value = train.trainId
   TicketApi.getTicketsByTrain(train.trainId)
     .then((resp) => {
-      if (resp.code === 2000) {
+      if (resp.code === 200) {
         ticketList.value = resp.data || []
         ticketDialogVisible.value = true
       }

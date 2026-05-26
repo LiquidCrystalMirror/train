@@ -2,7 +2,7 @@ package com.example.ticket.controller;
 
 import com.example.ticket.entity.RefundInfo;
 import com.example.ticket.service.RefundService;
-import com.example.ticket.util.RespEntity;
+import com.example.ticket.util.ApiResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -19,12 +19,12 @@ public class RefundController {
      * 退票接口
      */
     @PostMapping("/do")
-    public RespEntity refund(@RequestBody Map<String, Integer> params) {
+    public ApiResult<RefundInfo> refund(@RequestBody Map<String, Integer> params) {
         Integer saleId = params.get("saleId");
         
         // 调用Service层业务方法，异常由全局处理器处理
         RefundInfo refundInfo = refundService.refundTicket(saleId);
         
-        return new RespEntity(2000, "退票成功", refundInfo);
+        return ApiResult.success("退票成功", refundInfo);
     }
 }

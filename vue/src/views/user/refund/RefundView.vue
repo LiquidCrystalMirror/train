@@ -43,11 +43,11 @@ const handleRefund = () => {
   formRef.value.validate().then(() => {
     loading.value = true
     RefundApi.refundTicket(form.value.saleId).then((resp) => {
-      if (resp.code === 2000) {
-        ElMessage.success('退票成功')
+      if (resp.code === 200) {
+        ElMessage.success(resp.message || '退票成功')
         handleReset()
       } else {
-        ElMessage.error(resp.msg || '退票失败')
+        ElMessage.error(resp.message || '退票失败')
       }
     }).catch(err => {
       ElMessage.error('退票失败：' + (err.message || '未知错误'))
