@@ -17,7 +17,6 @@ let routes=[
     name:'register',
     component:()=>import('@/views/Register.vue')
   },
-  // 管理员路由
   {
     path:'/admin',
     name:'admin',
@@ -35,6 +34,18 @@ let routes=[
         path:'/admin/user',
         name:'adminUser',
         component:()=>import('@/views/admin/user/ListView.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path:'/admin/station',
+        name:'adminStation',
+        component:()=>import('@/views/admin/station/ListView.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path:'/admin/station/detail',
+        name:'adminStationDetail',
+        component:()=>import('@/views/admin/station/StationView.vue'),
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
@@ -81,7 +92,6 @@ let routes=[
       }
     ]
   },
-  // 用户路由
   {
     path:'/user',
     name:'user',
@@ -121,24 +131,19 @@ const router = createRouter({
   routes,
 })
 
-// 全局前置路由守卫
 router.beforeEach((to, from) => {
   console.log('路由守卫触发:', {
     from: from.path,
     to: to.path,
     isLoggedIn: authService.isLoggedIn()
   })
-  
-  // 白名单路径（不需要登录验证）
+
   const whiteList = ['/login', '/register']
 
-  // 检查目标路径是否在白名单中
   if (whiteList.includes(to.path)) {
-    // 如果已登录，访问登录页则重定向到对应角色的首页
     if (to.path === '/login' && authService.isLoggedIn()) {
       const user = authService.getUser()
       console.log('已登录用户信息:', user)
-      // 如果用户信息不完整，清除并留在登录页
       if (!user || !user.role) {
         console.warn('用户信息不完整，清除登录状态')
         authService.clearAuth()
@@ -153,28 +158,23 @@ router.beforeEach((to, from) => {
     return true
   }
 
-  // 其他路径需要验证登录状态
   if (!authService.isLoggedIn()) {
     console.log('未登录，重定向到登录页')
     authService.redirectToLogin()
     return false
   }
 
-  // 检查角色权限
   const user = authService.getUser()
   console.log('当前用户角色:', user?.role, '路由要求角色:', to.meta.role)
-  
-  // 如果用户信息不完整，清除登录状态并重定向到登录页
+
   if (!user || !user.role) {
     console.warn('用户信息不完整，清除登录状态')
     authService.clearAuth()
     return '/login'
   }
-  
+
   if (to.meta.role) {
-    // 如果路由需要特定角色，检查用户是否有该角色
     if (user.role !== to.meta.role) {
-      // 角色不匹配，重定向到对应角色的首页
       console.warn('角色不匹配，重定向到对应首页')
       ElMessage.warning('您没有权限访问该页面')
       if (user.role === 'admin') {

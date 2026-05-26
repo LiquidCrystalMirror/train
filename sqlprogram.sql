@@ -11,7 +11,7 @@
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 25/05/2026 23:06:32
+ Date: 26/05/2026 18:05:14
 */
 
 SET NAMES utf8mb4;
@@ -100,6 +100,36 @@ INSERT INTO `station` VALUES (7, '广州南', '2026-05-20 23:33:54');
 INSERT INTO `station` VALUES (8, '深圳北', '2026-05-20 23:33:54');
 INSERT INTO `station` VALUES (9, '武汉', '2026-05-20 23:33:54');
 INSERT INTO `station` VALUES (10, '成都东', '2026-05-20 23:33:54');
+
+-- ----------------------------
+-- Table structure for station_connection
+-- ----------------------------
+DROP TABLE IF EXISTS `station_connection`;
+CREATE TABLE `station_connection`  (
+  `station_a_id` int NOT NULL COMMENT '站点A ID',
+  `station_b_id` int NOT NULL COMMENT '站点B ID',
+  `travel_time_minutes` double NOT NULL COMMENT '通行时间（分钟）',
+  `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`station_a_id`, `station_b_id`) USING BTREE,
+  INDEX `idx_station_b`(`station_b_id` ASC) USING BTREE,
+  CONSTRAINT `fk_station_a` FOREIGN KEY (`station_a_id`) REFERENCES `station` (`station_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `fk_station_b` FOREIGN KEY (`station_b_id`) REFERENCES `station` (`station_id`) ON DELETE CASCADE ON UPDATE RESTRICT,
+  CONSTRAINT `chk_a_lt_b` CHECK (`station_a_id` < `station_b_id`)
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '站点联通表（无向图）' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Records of station_connection
+-- ----------------------------
+INSERT INTO `station_connection` VALUES (1, 2, 30, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (1, 3, 120, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (2, 3, 60, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (3, 4, 90, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (4, 5, 60, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (4, 9, 70, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (5, 6, 45, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (7, 8, 30, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (7, 9, 240, '2026-05-26 18:01:28');
+INSERT INTO `station_connection` VALUES (9, 10, 300, '2026-05-26 18:01:28');
 
 -- ----------------------------
 -- Table structure for ticket_info

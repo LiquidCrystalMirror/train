@@ -29,7 +29,6 @@
     </el-header>
     <el-container class="main-container">
       <el-aside :style="{ width: isCollapse ? '64px' : '200px', transition: 'width 0.3s' }" class="custom-aside">
-        <!-- 优化后的侧边栏折叠按钮 -->
         <div class="sidebar-toggle-btn" :class="{ 'is-collapsed': isCollapse }" @click="toggleMenu">
           <el-icon :size="20">
             <Operation />
@@ -47,7 +46,6 @@
             :router="true"
             style="border: none;"
             :collapse-transition="false">
-          <!-- 首页 -->
           <el-menu-item index="/admin/home">
             <el-icon><HomeFilled /></el-icon>
             <span>首页</span>
@@ -67,8 +65,12 @@
           <el-sub-menu index="2">
             <template #title>
               <el-icon><Document /></el-icon>
-              <span>车次管理</span>
+              <span>基础数据</span>
             </template>
+            <el-menu-item index="/admin/station">
+              <el-icon><Location /></el-icon>
+              <span>站点管理</span>
+            </el-menu-item>
             <el-menu-item index="/admin/train">
               <el-icon><List /></el-icon>
               <span>车次列表</span>
@@ -144,26 +146,24 @@ import {
   Close,
   HomeFilled,
   Search,
-  Tickets
+  Tickets,
+  Location
 } from '@element-plus/icons-vue';
 
 const route = useRoute();
 
 const isCollapse = ref(false)
 
-// 动态计算当前激活的菜单项（解决刷新后菜单高亮不一致的问题）
 const activeMenu = computed(() => {
   return route.path
 })
 
-// 获取用户信息
 const user = computed(() => authService.getUser())
 const userName = computed(() => {
   const userData = user.value
   return userData ? (userData.realName || userData.username || '用户') : '用户'
 })
 
-// 组件挂载时检查登录状态
 onMounted(() => {
   if (!authService.checkAuth()) {
     return
@@ -177,14 +177,12 @@ const toggleMenu = () => {
 
 const handleCommand = (command) => {
   if (command === 'logout') {
-    // 清除所有登录状态
     localStorage.removeItem('user')
     localStorage.removeItem('token')
     sessionStorage.clear()
 
     ElMessage.success('退出登录成功')
 
-    // 使用 replace 模式强制跳转，避免历史记录问题
     router.replace('/login')
   }
 }
@@ -266,7 +264,6 @@ const handleCommand = (command) => {
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* 侧边栏样式 */
 .custom-aside {
   background-color: #304156;
   overflow-x: hidden;
@@ -275,7 +272,6 @@ const handleCommand = (command) => {
   flex-direction: column;
 }
 
-/* 优化后的侧边栏折叠按钮样式 */
 .sidebar-toggle-btn {
   display: flex;
   align-items: center;
@@ -304,7 +300,6 @@ const handleCommand = (command) => {
   transform: translateY(0px);
 }
 
-/* 侧边栏收起时的按钮样式 */
 .sidebar-toggle-btn.is-collapsed {
   justify-content: center;
   padding: 12px 0;
@@ -318,7 +313,6 @@ const handleCommand = (command) => {
   letter-spacing: 0.5px;
 }
 
-/* 收起状态下悬浮显示文字提示 */
 .sidebar-toggle-btn.is-collapsed {
   position: relative;
 }
@@ -345,7 +339,6 @@ const handleCommand = (command) => {
   display: block;
 }
 
-/* 按钮图标旋转动画 */
 .sidebar-toggle-btn .el-icon {
   transition: transform 0.3s ease;
 }
@@ -354,7 +347,6 @@ const handleCommand = (command) => {
   transform: scale(1.1);
 }
 
-/* 菜单容器自适应 */
 .el-menu {
   flex: 1;
   border-right: none !important;
@@ -370,7 +362,6 @@ const handleCommand = (command) => {
   overflow-y: auto;
 }
 
-/* 自定义滚动条样式 */
 .main-content::-webkit-scrollbar {
   width: 8px;
 }
