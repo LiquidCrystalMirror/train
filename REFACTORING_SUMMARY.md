@@ -241,23 +241,31 @@ sale_info (订单)
 ## ⚠️ 注意事项
 
 ### 1. 需要完善的功能
-- RouteView中的loadRouteList方法需要实现完整的路线列表查询API
-- 列车管理页面(Train ListView)需要更新以显示和选择route_id
-- 票价计算逻辑需要根据price_schedule表实现
-- 车票生成时需要集成水位表检查
+- ✅ RouteView中的loadRouteList方法 - 已实现基础框架，可根据需求扩展
+- ⚠️ 列车管理页面(Train ListView)需要更新以显示和选择route_id
+- ⚠️ 票价计算逻辑需要根据price_schedule表实现
+- ⚠️ 车票生成时需要集成水位表检查
+- ⚠️ 车厢模板(carriage_info)需要初始数据或管理界面
 
 ### 2. 数据库约束
-- `station_connection`表有CHECK约束:`station_a_id < station_b_id`
-- `router_station`表有唯一索引:`uk_train_seq (router_id, station_seq)`
-- `ticket_info`表有唯一索引:`uk_train_seat (train_id, carriage_number, seat_number)`
-- 外键约束需要确保数据完整性
+- ✅ `station_connection`表有CHECK约束:`station_a_id < station_bId`
+- ✅ `router_station`表有唯一索引:`uk_train_seq (router_id, station_seq)`
+- ✅ `ticket_info`表有唯一索引:`uk_train_seat (train_id, carriage_number, seat_number)`
+- ⚠️ 外键约束需要在数据库中确认是否启用
 
-### 3. 建议的后续优化
-- 添加缓存机制(Redis)提升查询性能
-- 实现票价动态计算算法
-- 添加车票锁定机制(防止超卖)
-- 实现更复杂的冲突检测算法
-- 添加日志记录和监控
+### 3. SQL注入防护说明
+- ✅ MyBatis使用`#{}`参数化查询，已有效防止SQL注入
+- ✅ 所有Controller层输入都进行了参数验证
+- ⚠️ 建议添加JSR-303 Bean Validation注解增强验证
+- ⚠️ 敏感操作建议添加日志记录
+
+### 4. 建议的后续优化
+- ⚠️ 实现票价动态计算算法(根据距离、座位类型等)
+- ⚠️ 添加车票锁定机制(防止超卖，可使用数据库行锁或乐观锁)
+- ⚠️ 实现更复杂的冲突检测算法(考虑站点停留时间、缓冲时间等)
+- ⚠️ 添加操作日志记录(audit log)
+- ⚠️ 添加全局异常处理优化
+- ⚠️ 前端添加加载状态和错误提示优化
 
 ---
 

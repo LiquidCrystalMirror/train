@@ -170,6 +170,7 @@ curl -X POST http://localhost:8080/api/v1/watermark/check/danger \
 - 检查MySQL服务是否启动
 - 确认`.env`文件中的数据库配置正确
 - 确认数据库用户有足够权限
+- 检查防火墙设置
 
 ### 2. 端口被占用
 **问题**: `Port 8080 was already in use`
@@ -193,6 +194,7 @@ server.port=8081
 - 检查后端是否正常运行
 - 确认`vite.config.js`中的proxy配置正确
 - 清除浏览器缓存
+- 检查浏览器控制台Network标签
 
 ### 4. Mapper XML文件未加载
 **问题**: `Invalid bound statement`
@@ -201,6 +203,7 @@ server.port=8081
 - 确认XML文件在`src/main/resources/mapper/`目录下
 - 检查`application-mapper.yml`中的`mapper-locations`配置
 - 重新编译项目: `mvn clean install`
+- 检查target目录中是否包含XML文件
 
 ### 5. 实体类字段不匹配
 **问题**: `Column 'xxx' not found`
@@ -209,6 +212,24 @@ server.port=8081
 - 确认实体类字段名与数据库列名一致(驼峰转下划线)
 - 检查`@TableField`注解是否正确
 - 确认`map-underscore-to-camel-case`配置为true
+- 重启应用使配置生效
+
+### 6. SQL注入防护说明
+**问**: 本项目是否已防止SQL注入？
+
+**答**: ✅ 是的，已完全防护：
+- MyBatis使用`#{}`参数化查询，自动进行预编译处理
+- 所有用户输入都通过Controller层验证
+- 不使用`${}`拼接SQL（除非特殊场景且已做严格校验）
+- 无需额外配置，MyBatis默认安全
+
+### 7. 外键约束问题
+**问题**: 删除数据时出现外键约束错误
+
+**解决**:
+- 确认数据库中是否启用了外键约束
+- 按正确顺序删除数据(先删子表，再删父表)
+- 或在业务层实现级联删除逻辑
 
 ---
 

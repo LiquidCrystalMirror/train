@@ -1,11 +1,14 @@
 package com.example.ticket.service.impl;
 
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.example.ticket.entity.PriceSchedule;
 import com.example.ticket.entity.SaleInfo;
 import com.example.ticket.entity.TicketInfo;
 import com.example.ticket.exception.BusinessException;
+import com.example.ticket.mapper.PriceScheduleMapper;
 import com.example.ticket.mapper.SaleInfoMapper;
 import com.example.ticket.mapper.TicketInfoMapper;
+import com.example.ticket.service.PriceScheduleService;
 import com.example.ticket.service.SaleService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,6 +21,9 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
     
     @Resource
     private TicketInfoMapper ticketInfoMapper;
+    
+    @Resource
+    private PriceScheduleService priceScheduleService;
     
     /**
      * 售票业务方法（带事务）
@@ -50,19 +56,27 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
             throw new BusinessException("车票状态不可售，当前状态：" + ticket.getTicketStatus());
         }
         
-        // 4. 设置用户ID和时间
+        // 4. 计算票价
+        int stationCount = saleInfo.getEndStationSeq() - saleInfo.getStartStationSeq() + 1;
+        Double price = priceScheduleService.getPriceByTrainAndStations(saleInfo.getTrainId(), stationCount);
+        if (price == null) {
+            throw new BusinessException("未找到该列车的价格策略，站点数：" + stationCount);
+        }
+        saleInfo.setPrice(price);
+        
+        // 5. 设置用户ID和时间
         saleInfo.setUserId(userId);
         saleInfo.setSaleTime(LocalDateTime.now());
         saleInfo.setSaleStatus("已出票");
         saleInfo.setCreateTime(LocalDateTime.now());
         
-        // 5. 保存售票记录
+        // 6. 保存售票记录
         boolean save = this.save(saleInfo);
         if (!save) {
             throw new BusinessException("售票失败");
         }
         
-        // 6. 售票成功后，把车票状态改为已售
+        // 7. 售票成功后，把车票状态改为已售
         int updateResult = ticketInfoMapper.updateTicketStatus(saleInfo.getTicketId(), "已售");
         if (updateResult <= 0) {
             throw new BusinessException("更新车票状态失败");
