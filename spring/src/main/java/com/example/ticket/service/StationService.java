@@ -18,4 +18,11 @@ public interface StationService extends IService<Station> {
     List<Map<String, Object>> getNeighborStationsWithTime(Integer stationId);
 
     boolean isConnected(Integer stationAId, Integer stationBId);
+    
+    /**
+     * 检查两个站点是否联通(别名方法)
+     */
+    default boolean areStationsConnected(Integer stationAId, Integer stationBId) {
+        return isConnected(stationAId, stationBId);
+    }
 }

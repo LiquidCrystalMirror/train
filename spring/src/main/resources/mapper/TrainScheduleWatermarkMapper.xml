@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ticket.mapper.TrainScheduleWatermarkMapper">
+
+    <!-- 查询指定列车的最新水位记录 -->
+    <select id="selectLatestByTrainId" resultType="com.example.ticket.entity.TrainScheduleWatermark">
+        SELECT * FROM train_schedule_watermark
+        WHERE train_id = #{trainId}
+        ORDER BY depart_time DESC
+        LIMIT 1
+    </select>
+
+    <!-- 检查指定时间段是否在水位危险时间内 -->
+    <select id="selectInDangerZone" resultType="com.example.ticket.entity.TrainScheduleWatermark">
+        SELECT * FROM train_schedule_watermark
+        WHERE train_id = #{trainId}
+        AND (
+            (#{startTime} BETWEEN depart_time AND arrive_time)
+            OR (#{endTime} BETWEEN depart_time AND arrive_time)
+            OR (depart_time BETWEEN #{startTime} AND #{endTime})
+            OR (arrive_time BETWEEN #{startTime} AND #{endTime})
+        )
+    </select>
+
+    <!-- 更新或插入水位记录(只保留最新的) -->
+    <insert id="upsertWatermark">
+        INSERT INTO train_schedule_watermark (train_id, route_id, depart_time, arrive_time, updated_by)
+        VALUES (#{trainId}, #{routeId}, #{departTime}, #{arriveTime}, #{updatedBy})
+        ON DUPLICATE KEY UPDATE
+            route_id = VALUES(route_id),
+            depart_time = VALUES(depart_time),
+            arrive_time = VALUES(arrive_time),
+            updated_by = VALUES(updatedBy)
+    </insert>
+
+</mapper>

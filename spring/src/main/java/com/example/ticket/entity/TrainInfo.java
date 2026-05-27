@@ -11,11 +11,19 @@ import java.time.LocalDateTime;
 public class TrainInfo {
     @TableId(type = IdType.AUTO)
     private Integer trainId;
+    
+    /**
+     * 车次编号(如G123)
+     */
     private String trainNumber;
-    private Integer totalStations;
-    private LocalDateTime departureTime;
-    private LocalDateTime arrivalTime;
-    private String runTime;
-    private LocalDateTime createTime;
-    private LocalDateTime updateTime;
+    
+    /**
+     * 总耗时(分钟)
+     */
+    private Integer timeConsuming;
+    
+    /**
+     * 路线ID(关联router_station.router_id)
+     */
+    private Integer routerId;
 }

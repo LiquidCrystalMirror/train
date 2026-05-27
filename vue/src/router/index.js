@@ -61,6 +61,18 @@ let routes=[
         meta: { requiresAuth: true, role: 'admin' }
       },
       {
+        path:'/admin/route',
+        name:'adminRoute',
+        component:()=>import('@/views/admin/route/RouteView.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
+        path:'/admin/departure',
+        name:'adminDeparture',
+        component:()=>import('@/views/admin/departure/DepartureView.vue'),
+        meta: { requiresAuth: true, role: 'admin' }
+      },
+      {
         path:'/admin/ticket',
         name:'adminTicket',
         component:()=>import('@/views/admin/ticket/ListView.vue'),

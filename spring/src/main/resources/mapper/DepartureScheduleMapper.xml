@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ticket.mapper.DepartureScheduleMapper">
+
+    <!-- 根据列车ID查询所有发车时间 -->
+    <select id="selectByTrainId" resultType="com.example.ticket.entity.DepartureSchedule">
+        SELECT * FROM departure_schedule
+        WHERE train_id = #{trainId}
+        ORDER BY departure_time ASC
+    </select>
+
+    <!-- 根据发车时间范围查询车次 -->
+    <select id="selectByDepartureTimeRange" resultType="com.example.ticket.entity.DepartureSchedule">
+        SELECT * FROM departure_schedule
+        WHERE departure_time BETWEEN #{startTime} AND #{endTime}
+        ORDER BY departure_time ASC
+    </select>
+
+    <!-- 检查指定时间段是否有冲突的车次 -->
+    <select id="selectConflictSchedules" resultType="com.example.ticket.entity.DepartureSchedule">
+        SELECT * FROM departure_schedule
+        WHERE train_id = #{trainId}
+        AND departure_time BETWEEN #{startTime} AND #{endTime}
+    </select>
+
+</mapper>

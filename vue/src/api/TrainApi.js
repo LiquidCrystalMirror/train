@@ -5,6 +5,11 @@ export function getTrainPage(params) {
     return post('/api/v1/train/list', params)
 }
 
+// 获取列车列表(不分页)
+export function getTrainList(params) {
+    return post('/api/v1/train/list', params)
+}
+
 // 添加车次
 export function addTrain(params) {
     return post('/api/v1/train/add', params)

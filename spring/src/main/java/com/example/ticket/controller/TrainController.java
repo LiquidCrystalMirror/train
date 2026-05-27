@@ -23,6 +23,10 @@ public class TrainController {
 
     @PostMapping("/add")
     public ApiResult<Void> add(@RequestBody TrainInfo trainInfo) {
+        // 验证route_id是否存在(如果有设置)
+        if (trainInfo.getRouterId() != null) {
+            // TODO: 可以添加验证路线是否存在的逻辑
+        }
         boolean save = trainService.save(trainInfo);
         return save ? ApiResult.success("添加成功") : ApiResult.error(400, "添加失败");
     }

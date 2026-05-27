@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ticket.mapper.RouterStationMapper">
+
+    <!-- 根据路线ID查询该路线的所有站点(按序号排序) -->
+    <select id="selectByRouterId" resultType="com.example.ticket.entity.RouterStation">
+        SELECT * FROM router_station
+        WHERE router_id = #{routerId}
+        ORDER BY station_seq ASC
+    </select>
+
+    <!-- 删除指定路线的所有站点关联 -->
+    <delete id="deleteByRouterId">
+        DELETE FROM router_station
+        WHERE router_id = #{routerId}
+    </delete>
+
+</mapper>

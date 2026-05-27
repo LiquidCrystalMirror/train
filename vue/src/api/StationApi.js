@@ -47,3 +47,8 @@ export default {
         return get(`${BASE_URL}/check/connection/${stationAId}/${stationBId}`)
     }
 }
+
+// 导出单独的函数供RouteView使用
+export function getAllStations() {
+    return get(`${BASE_URL}/list`)
+}

@@ -71,9 +71,17 @@
               <el-icon><Location /></el-icon>
               <span>站点管理</span>
             </el-menu-item>
+            <el-menu-item index="/admin/route">
+              <el-icon><Location /></el-icon>
+              <span>路线管理</span>
+            </el-menu-item>
             <el-menu-item index="/admin/train">
               <el-icon><List /></el-icon>
-              <span>车次列表</span>
+              <span>列车管理</span>
+            </el-menu-item>
+            <el-menu-item index="/admin/departure">
+              <el-icon><Tickets /></el-icon>
+              <span>车次管理</span>
             </el-menu-item>
             <el-menu-item index="/admin/train-search">
               <el-icon><Search /></el-icon>

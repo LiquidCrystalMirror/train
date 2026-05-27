@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.ticket.mapper.PriceScheduleMapper">
+
+    <!-- 根据列车ID和站点数量查询价格 -->
+    <select id="selectPriceByTrainAndStations" resultType="java.lang.Double">
+        SELECT price FROM price_schedule
+        WHERE train_id = #{trainId}
+        AND station_count = #{stationCount}
+        LIMIT 1
+    </select>
+
+</mapper>
