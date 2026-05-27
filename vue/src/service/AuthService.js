@@ -1,5 +1,6 @@
 // 认证服务 - 管理用户登录状态和token
 import router from '@/router'
+import { ElMessage } from 'element-plus'
 
 const TOKEN_KEY = 'token'
 const USER_KEY = 'user'
@@ -46,8 +47,10 @@ class AuthService {
   }
 
   // 跳转到登录页
-  redirectToLogin() {
+  redirectToLogin(message = '登录已过期，请重新登录') {
     this.clearAuth()
+    ElMessage.warning(message)
+    // 使用 replace 而不是 push，避免用户点击浏览器后退按钮回到原页面
     router.replace('/login')
   }
 
@@ -59,6 +62,7 @@ class AuthService {
 
   // 退出登录
   logout() {
+    ElMessage.success('已退出登录')
     this.clearAuth()
     router.replace('/login')
   }

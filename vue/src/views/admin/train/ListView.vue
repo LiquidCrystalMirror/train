@@ -103,7 +103,6 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Search, Refresh, Plus } from '@element-plus/icons-vue'
 import * as TrainApi from '@/api/TrainApi.js'
-import { getRouteStations } from '@/api/RouteApi.js'
 
 const searchForm = ref({
   find: '',
@@ -135,23 +134,10 @@ const formatDateTime = (dateTime) => {
 // 加载所有路线
 const loadRouteList = async () => {
   try {
-    // 这里简化处理，实际应该有一个获取所有路线的API
-    // 暂时使用1-10作为示例
-    const routes = []
-    for (let i = 1; i <= 10; i++) {
-      try {
-        const res = await getRouteStations(i)
-        if (res.code === 200 && res.data && res.data.length > 0) {
-          routes.push({
-            routerId: i,
-            stationCount: res.data.length
-          })
-        }
-      } catch (e) {
-        // 忽略错误
-      }
-    }
-    routeList.value = routes
+    // TODO: 应该有一个获取所有路线的API，而不是循环查询
+    // 暂时使用空数组，等后端提供接口后再实现
+    routeList.value = []
+    console.log('路线列表功能待实现：需要后端提供获取所有路线的接口')
   } catch (error) {
     console.error('加载路线列表失败:', error)
   }

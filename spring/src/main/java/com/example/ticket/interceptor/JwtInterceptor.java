@@ -25,7 +25,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         String jwt = req.getHeader("Authorization");
 
         if (jwt == null) {
-            res.getWriter().write("{\"code\":4001,\"msg\":\"请先登录\",\"data\":null}");
+            res.getWriter().write("{\"code\":401,\"msg\":\"请先登录\",\"data\":null}");
             return false;
         }
 
@@ -36,7 +36,7 @@ public class JwtInterceptor implements HandlerInterceptor {
         User user = jwtUtil.parseAndValidateToken(jwt);
         
         if (user == null) {
-            res.getWriter().write("{\"code\":4001,\"msg\":\"凭证无效，过期或被篡改，请重新登录\",\"data\":null}");
+            res.getWriter().write("{\"code\":401,\"msg\":\"凭证无效，过期或被篡改，请重新登录\",\"data\":null}");
             return false;
         }
 

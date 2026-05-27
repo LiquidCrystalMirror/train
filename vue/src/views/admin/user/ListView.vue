@@ -66,7 +66,7 @@
 
   <el-pagination
       class="mgt-4"
-      v-model:current-page="searchForm.page"
+      v-model:current-page="searchForm.pageNum"
       v-model:page-size="searchForm.pageSize"
       :page-sizes="[1, 2, 10, 200]"
       layout="total, sizes, prev, pager, next, jumper"
@@ -102,6 +102,7 @@
       <el-button type="primary" @click="handleSave">保存</el-button>
     </template>
   </el-dialog>
+  </div>
 </template>
 
 

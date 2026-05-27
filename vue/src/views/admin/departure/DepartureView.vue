@@ -92,7 +92,7 @@
 
       <template #footer>
         <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="createSchedule">创建</el-button>
+        <el-button type="primary" @click="handleCreateSchedule">创建</el-button>
       </template>
     </el-dialog>
   </div>
@@ -166,7 +166,7 @@ const showCreateDialog = () => {
 }
 
 // 创建车次
-const createSchedule = async () => {
+const handleCreateSchedule = async () => {
   if (!scheduleForm.value.trainId || !scheduleForm.value.departureTime) {
     ElMessage.warning('请填写完整信息')
     return

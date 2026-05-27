@@ -1,4 +1,4 @@
-import { post, get } from "@/request/request.js"
+import { post, get, put } from "@/request/request.js"
 
 // 分页查询用户
 export function getUserPage(params) {
@@ -12,7 +12,7 @@ export function getAllUsers() {
 
 // 管理员更新用户
 export function updateUser(id, params) {
-    return post(`/api/v1/admin/user/${id}`, params)
+    return put(`/api/v1/admin/user/update`, params)
 }
 
 // 管理员删除用户
