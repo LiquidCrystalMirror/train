@@ -5,18 +5,18 @@
       <el-tab-pane label="售票记录" name="sales">
         <div class="table-container">
           <el-table :data="salesData" stripe border style="width: 100%;">
-            <el-table-column prop="saleId" label="记录ID" />
-            <el-table-column prop="ticketId" label="车票ID" />
-            <el-table-column prop="trainId" label="车次ID" />
-            <el-table-column prop="userId" label="用户ID" />
-            <el-table-column prop="startStationSeq" label="上车站序号" />
-            <el-table-column prop="endStationSeq" label="下车站序号" />
-            <el-table-column prop="saleTime" label="购票时间">
+            <el-table-column prop="saleId" label="记录ID" align="center" />
+            <el-table-column prop="ticketId" label="车票ID" align="center" />
+            <el-table-column prop="trainId" label="车次ID" align="center" />
+            <el-table-column prop="userId" label="用户ID" align="center" />
+            <el-table-column prop="startStationSeq" label="上车站序号" align="center" />
+            <el-table-column prop="endStationSeq" label="下车站序号" align="center" />
+            <el-table-column prop="saleTime" label="购票时间" align="center">
               <template #default="scope">
                 {{ formatDateTime(scope.row.saleTime) }}
               </template>
             </el-table-column>
-            <el-table-column prop="saleStatus" label="状态">
+            <el-table-column prop="saleStatus" label="状态" align="center">
               <template #default="scope">
                 <el-tag :type="scope.row.saleStatus === '已出票' ? 'success' : 'info'">
                   {{ scope.row.saleStatus }}
@@ -31,18 +31,18 @@
       <el-tab-pane label="退票记录" name="refunds">
         <div class="table-container">
           <el-table :data="refundsData" stripe border style="width: 100%;">
-            <el-table-column prop="refundId" label="退票ID" />
-            <el-table-column prop="saleId" label="售票记录ID" />
-            <el-table-column prop="ticketId" label="车票ID" />
-            <el-table-column prop="trainId" label="车次ID" />
-            <el-table-column prop="userId" label="用户ID" />
-            <el-table-column prop="refundTime" label="退票时间">
+            <el-table-column prop="refundId" label="退票ID" align="center" />
+            <el-table-column prop="saleId" label="售票记录ID" align="center" />
+            <el-table-column prop="ticketId" label="车票ID" align="center" />
+            <el-table-column prop="trainId" label="车次ID" align="center" />
+            <el-table-column prop="userId" label="用户ID" align="center" />
+            <el-table-column prop="refundTime" label="退票时间" align="center">
               <template #default="scope">
                 {{ formatDateTime(scope.row.refundTime) }}
               </template>
             </el-table-column>
-            <el-table-column prop="refundStatus" label="退票状态" />
-            <el-table-column prop="refundRemark" label="备注" />
+            <el-table-column prop="refundStatus" label="退票状态" align="center" />
+            <el-table-column prop="refundRemark" label="备注" align="center" />
           </el-table>
         </div>
       </el-tab-pane>

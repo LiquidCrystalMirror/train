@@ -33,24 +33,24 @@
 
     <div class="table-container">
     <el-table :data="tableData" stripe border style="width: 100%;">
-      <el-table-column prop="userId" label="ID" />
-      <el-table-column prop="username" label="用户名" />
-      <el-table-column prop="realName" label="真实姓名" />
-      <el-table-column prop="idCard" label="身份证号" show-overflow-tooltip />
-      <el-table-column prop="phone" label="手机号" />
-      <el-table-column prop="role" label="角色">
+      <el-table-column prop="userId" label="ID" align="center" />
+      <el-table-column prop="username" label="用户名" align="center" />
+      <el-table-column prop="realName" label="真实姓名" align="center" />
+      <el-table-column prop="idCard" label="身份证号" show-overflow-tooltip align="center" />
+      <el-table-column prop="phone" label="手机号" align="center" />
+      <el-table-column prop="role" label="角色" align="center">
         <template #default="scope">
           <el-tag :type="scope.row.role === 'admin' ? 'danger' : 'primary'">
             {{ scope.row.role === 'admin' ? '管理员' : '普通用户' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="createTime" label="创建时间" show-overflow-tooltip>
+      <el-table-column prop="createTime" label="创建时间" show-overflow-tooltip align="center">
         <template #default="scope">
           {{ formatDateTime(scope.row.createTime) }}
         </template>
       </el-table-column>
-      <el-table-column label="操作" v-if="isAdmin">
+      <el-table-column label="操作" v-if="isAdmin" align="center">
         <template #default="scope">
           <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
           <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.userId)">

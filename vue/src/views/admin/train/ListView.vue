@@ -36,16 +36,16 @@
     <!-- 数据表格 -->
     <div class="table-container">
       <el-table :data="tableData" stripe border style="width: 100%;">
-        <el-table-column prop="trainId" label="ID" width="80" />
-        <el-table-column prop="trainNumber" label="车次号" width="120" />
-        <el-table-column prop="routerId" label="路线ID" width="100">
+        <el-table-column prop="trainId" label="ID" align="center" />
+        <el-table-column prop="trainNumber" label="车次号" align="center" />
+        <el-table-column prop="routerId" label="路线ID" align="center">
           <template #default="scope">
             <el-tag v-if="scope.row.routerId" type="success">路线{{ scope.row.routerId }}</el-tag>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="timeConsuming" label="总耗时(分钟)" width="120" />
-        <el-table-column label="操作" fixed="right" width="150">
+        <el-table-column prop="timeConsuming" label="总耗时(分钟)" align="center" />
+        <el-table-column label="操作" fixed="right" align="center">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
             <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.trainId)">

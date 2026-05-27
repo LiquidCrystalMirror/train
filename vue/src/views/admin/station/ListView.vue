@@ -33,14 +33,14 @@
 
     <div class="table-container">
       <el-table :data="tableData" stripe border style="width: 100%;">
-        <el-table-column prop="stationId" label="ID" />
-        <el-table-column prop="stationName" label="站点名称" />
-        <el-table-column prop="createTime" label="创建时间">
+        <el-table-column prop="stationId" label="ID" align="center" />
+        <el-table-column prop="stationName" label="站点名称" align="center" />
+        <el-table-column prop="createTime" label="创建时间" align="center">
           <template #default="scope">
             {{ formatDateTime(scope.row.createTime) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" align="center">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
             <el-button size="small" type="success" @click="handleViewConnections(scope.row)">

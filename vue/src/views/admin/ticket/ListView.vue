@@ -36,28 +36,28 @@
     <!-- 数据表格 -->
     <div class="table-container">
       <el-table :data="tableData" stripe border style="width: 100%;">
-        <el-table-column prop="ticketId" label="ID" />
-        <el-table-column prop="trainId" label="车次ID" />
-        <el-table-column prop="carriageNumber" label="车厢号" />
-        <el-table-column prop="seatNumber" label="座位号" />
-        <el-table-column prop="seatType" label="座位类型">
+        <el-table-column prop="ticketId" label="ID" align="center" />
+        <el-table-column prop="trainId" label="车次ID" align="center" />
+        <el-table-column prop="carriageNumber" label="车厢号" align="center" />
+        <el-table-column prop="seatNumber" label="座位号" align="center" />
+        <el-table-column prop="seatType" label="座位类型" align="center">
           <template #default="scope">
             {{ getSeatTypeName(scope.row.seatType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="价格">
+        <el-table-column prop="price" label="价格" align="center">
           <template #default="scope">
             ¥{{ scope.row.price }}
           </template>
         </el-table-column>
-        <el-table-column prop="ticketStatus" label="状态">
+        <el-table-column prop="ticketStatus" label="状态" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.ticketStatus === 'available' ? 'success' : 'info'">
               {{ scope.row.ticketStatus === 'available' ? '可售' : '已售' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" align="center">
           <template #default="scope">
             <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
             <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.ticketId)">

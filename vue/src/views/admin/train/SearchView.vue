@@ -68,21 +68,21 @@
       </template>
       
       <el-table :data="trainList" stripe border style="width: 100%">
-        <el-table-column prop="trainId" label="车次ID" width="100" />
-        <el-table-column prop="trainNumber" label="车次号" width="120" />
-        <el-table-column prop="departureTime" label="发车时间" width="180">
+        <el-table-column prop="trainId" label="车次ID" align="center" />
+        <el-table-column prop="trainNumber" label="车次号" align="center" />
+        <el-table-column prop="departureTime" label="发车时间" align="center">
           <template #default="scope">
             {{ formatDateTime(scope.row.departureTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="arrivalTime" label="到达时间" width="180">
+        <el-table-column prop="arrivalTime" label="到达时间" align="center">
           <template #default="scope">
             {{ formatDateTime(scope.row.arrivalTime) }}
           </template>
         </el-table-column>
-        <el-table-column prop="runTime" label="运行时长" width="120" />
-        <el-table-column prop="totalStations" label="站点数" width="100" />
-        <el-table-column label="操作" width="150">
+        <el-table-column prop="runTime" label="运行时长" align="center" />
+        <el-table-column prop="totalStations" label="站点数" align="center" />
+        <el-table-column label="操作" align="center">
           <template #default="scope">
             <el-button size="small" type="primary" @click="viewTickets(scope.row)">
               查看车票
@@ -95,27 +95,27 @@
     <!-- 车票列表对话框 -->
     <el-dialog title="车票列表" v-model="ticketDialogVisible" width="800px">
       <el-table :data="ticketList" stripe border style="width: 100%">
-        <el-table-column prop="ticketId" label="车票ID" width="100" />
-        <el-table-column prop="carriageNumber" label="车厢号" width="100" />
-        <el-table-column prop="seatNumber" label="座位号" width="100" />
-        <el-table-column prop="seatType" label="座位类型" width="120">
+        <el-table-column prop="ticketId" label="车票ID" align="center" />
+        <el-table-column prop="carriageNumber" label="车厢号" align="center" />
+        <el-table-column prop="seatNumber" label="座位号" align="center" />
+        <el-table-column prop="seatType" label="座位类型" align="center">
           <template #default="scope">
             {{ getSeatTypeText(scope.row.seatType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="价格" width="100">
+        <el-table-column prop="price" label="价格" align="center">
           <template #default="scope">
             ¥{{ scope.row.price }}
           </template>
         </el-table-column>
-        <el-table-column prop="ticketStatus" label="状态" width="100">
+        <el-table-column prop="ticketStatus" label="状态" align="center">
           <template #default="scope">
             <el-tag :type="scope.row.ticketStatus === 'available' ? 'success' : 'info'">
               {{ scope.row.ticketStatus === 'available' ? '可售' : '已售' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作">
+        <el-table-column label="操作" align="center">
           <template #default="scope">
             <el-button 
               size="small" 

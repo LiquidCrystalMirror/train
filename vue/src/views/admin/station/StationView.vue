@@ -22,9 +22,9 @@
       </template>
 
       <el-table :data="connectionData" stripe border style="width: 100%">
-        <el-table-column prop="neighborStationId" label="邻站ID" width="100" />
-        <el-table-column prop="neighborStationName" label="邻站名称" width="200" />
-        <el-table-column prop="travelTimeMinutes" label="通行时间（分钟）" width="150" />
+        <el-table-column prop="neighborStationId" label="邻站ID" width="120" align="center" />
+        <el-table-column prop="neighborStationName" label="邻站名称" min-width="150" align="center" />
+        <el-table-column prop="travelTimeMinutes" label="通行时间（分钟）" width="180" align="center" />
         <el-table-column label="操作" width="200" fixed="right">
           <template #default="scope">
             <el-button size="small" type="primary" @click="handleEditConnection(scope.row)">
