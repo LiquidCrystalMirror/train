@@ -11,7 +11,7 @@
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 26/05/2026 23:53:56
+ Date: 27/05/2026 16:04:10
 */
 
 SET NAMES utf8mb4;
@@ -185,6 +185,22 @@ CREATE TABLE `train_info`  (
   UNIQUE INDEX `train_number`(`train_number` ASC) USING BTREE,
   INDEX `idx_train_number`(`train_number` ASC) USING BTREE
 ) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次信息表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for train_schedule_watermark
+-- ----------------------------
+DROP TABLE IF EXISTS `train_schedule_watermark`;
+CREATE TABLE `train_schedule_watermark`  (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `train_id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '车次号',
+  `route_id` int NOT NULL COMMENT '路线ID',
+  `depart_time` datetime NOT NULL COMMENT '始发时间',
+  `arrive_time` datetime NOT NULL COMMENT '终到时间',
+  `updated_by` int NULL DEFAULT NULL COMMENT '创建人ID',
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_time_slot`(`train_id` ASC, `depart_time` ASC, `arrive_time` ASC) USING BTREE,
+  INDEX `idx_train_time`(`train_id` ASC, `depart_time` ASC, `arrive_time` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次时间水位表-防止时间冲突' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for user
