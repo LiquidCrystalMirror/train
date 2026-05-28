@@ -22,6 +22,6 @@ public class Router {
     @TableField("total_duration")
     private Double totalDuration;
 
-    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    @TableField(value = "create_time", insertStrategy = FieldStrategy.NEVER, updateStrategy = FieldStrategy.NEVER)
     private LocalDateTime createTime;
 }

@@ -4,7 +4,6 @@ import com.example.ticket.entity.Router;
 import com.example.ticket.entity.RouterStation;
 import com.example.ticket.service.RouterService;
 import com.example.ticket.util.ApiResult;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -30,15 +29,20 @@ public class RouteController {
      * @return 往程路线ID
      */
     @PostMapping("/create")
-    @Transactional
     public ApiResult<Long> createRoute(@RequestBody Map<String, Object> params) {
+        // 参数校验
         String routerName = (String) params.get("routerName");
+        if (routerName == null || routerName.trim().isEmpty()) {
+            return ApiResult.error(400, "路线名称不能为空");
+        }
         
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> stationsData = (List<Map<String, Object>>) params.get("stations");
+        if (stationsData == null || stationsData.isEmpty()) {
+            return ApiResult.error(400, "站点列表不能为空");
+        }
         
         Long forwardRouteId = routerService.createRouteWithReturn(routerName, stationsData);
-        
         return ApiResult.success("创建成功，已自动生成往程和返程路线", forwardRouteId);
     }
 
@@ -49,7 +53,6 @@ public class RouteController {
      * @param params 包含 routerId, routerName (可选), stations (可选)
      */
     @PostMapping("/update")
-    @Transactional
     public ApiResult<Void> updateRoute(@RequestBody Map<String, Object> params) {
         Long routerId = ((Number) params.get("routerId")).longValue();
         String routerName = (String) params.get("routerName");
@@ -57,19 +60,18 @@ public class RouteController {
         @SuppressWarnings("unchecked")
         List<Map<String, Object>> stationsData = (List<Map<String, Object>>) params.get("stations");
         
-        boolean result = routerService.updateRoute(routerId, routerName, stationsData);
-        return result ? ApiResult.success("更新成功") : ApiResult.error(400, "更新失败");
+        routerService.updateRoute(routerId, routerName, stationsData);
+        return ApiResult.success("更新成功");
     }
 
     /**
      * 删除路线（同时删除往返路线）
      */
     @PostMapping("/delete")
-    @Transactional
     public ApiResult<Void> deleteRoute(@RequestBody Map<String, Object> params) {
         Long routerId = ((Number) params.get("routerId")).longValue();
-        boolean result = routerService.deleteRoute(routerId);
-        return result ? ApiResult.success("删除成功") : ApiResult.error(400, "删除失败");
+        routerService.deleteRoute(routerId);
+        return ApiResult.success("删除成功");
     }
 
     // ==================== 查询接口 ====================

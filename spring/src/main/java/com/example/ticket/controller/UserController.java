@@ -3,6 +3,7 @@ package com.example.ticket.controller;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.ticket.entity.User;
+import com.example.ticket.interceptor.RoleInterceptor;
 import com.example.ticket.mapper.UserMapper;
 import com.example.ticket.service.UserService;
 import com.example.ticket.util.JwtUtil;
@@ -187,25 +188,17 @@ public class UserController {
     }
 
     // ===================== 管理员修改用户信息 =====================
+    @RoleInterceptor.RequireRole("admin")
     @PutMapping("/admin/user/update")
-    public ApiResult<Void> adminUpdate(@RequestBody User user, HttpServletRequest request) {
-        User login = (User) request.getAttribute("auth");
-        if (!"admin".equals(login.getRole())) {
-            return ApiResult.error(403, "无权限");
-        }
-
+    public ApiResult<Void> adminUpdate(@RequestBody User user) {
         userService.updateById(user);
         return ApiResult.success("修改成功");
     }
 
     // ===================== 管理员删除用户 =====================
+    @RoleInterceptor.RequireRole("admin")
     @DeleteMapping("/admin/user/{id}")
-    public ApiResult<Void> delete(@PathVariable Integer id, HttpServletRequest request) {
-        User login = (User) request.getAttribute("auth");
-        if (!"admin".equals(login.getRole())) {
-            return ApiResult.error(403, "无权限");
-        }
-
+    public ApiResult<Void> delete(@PathVariable Integer id) {
         userService.removeById(id);
         return ApiResult.success("删除成功");
     }

@@ -1,6 +1,7 @@
 package com.example.ticket.config;
 
 import com.example.ticket.interceptor.JwtInterceptor;
+import com.example.ticket.interceptor.RoleInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -12,6 +13,9 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class MyWebConfig implements WebMvcConfigurer {
     @Autowired
     private JwtInterceptor jwtInterceptor;
+    
+    @Autowired
+    private RoleInterceptor roleInterceptor;
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry){
@@ -24,18 +28,40 @@ public class MyWebConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/static/");
     }
 
-//    @Override
-//    public void addInterceptors(InterceptorRegistry registry) {
-//        registry.addInterceptor(jwtInterceptor)
-//                .addPathPatterns("/api/v1/**")
-//                .excludePathPatterns(
-//                        "/api/v1/g/**",
-//                        "/api/v1/login",
-//                        "/api/v1/reg",
-//                        "/api/v1/admin/reg",
-//                        "/api/v1/index"
-//                );
-//    }
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        // 1. JWT拦截器（第一层：验证Token）
+        registry.addInterceptor(jwtInterceptor)
+                .addPathPatterns("/api/v1/**")
+                .excludePathPatterns(
+                        // 登录注册相关（无需Token）
+                        "/api/v1/login",           // 用户登录
+                        "/api/v1/reg",             // 用户注册
+                        "/api/v1/admin/reg",       // 管理员注册
+                        // 公开查询接口（以/g/开头的接口）
+                        "/api/v1/g/**",
+                        // 静态资源
+                        "/static/**",
+                        "/favicon.ico",
+                        "/**"
+                );
+        
+        // 2. Role拦截器（第二层：验证权限，只处理JWT已放行的请求）
+        registry.addInterceptor(roleInterceptor)
+                .addPathPatterns("/api/v1/**")
+                .excludePathPatterns(
+                        // 登录注册相关
+                        "/api/v1/login",
+                        "/api/v1/reg",
+                        "/api/v1/admin/reg",
+                        // 公开查询接口
+                        "/api/v1/g/**",
+                        // 静态资源
+                        "/static/**",
+                        "/favicon.ico"
+                );
+    }
+
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
