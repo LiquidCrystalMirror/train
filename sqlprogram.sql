@@ -1,17 +1,17 @@
 /*
- Navicat Premium Dump SQL
+ Navicat MySQL Dump SQL
 
- Source Server         : horse1
+ Source Server         : l1
  Source Server Type    : MySQL
  Source Server Version : 80044 (8.0.44)
  Source Host           : localhost:3306
- Source Schema         : sqlprogram1
+ Source Schema         : sqlprogram
 
  Target Server Type    : MySQL
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 28/05/2026 16:45:35
+ Date: 28/05/2026 17:30:13
 */
 
 SET NAMES utf8mb4;
@@ -37,8 +37,7 @@ CREATE TABLE `departure_schedule`  (
   `train_id` int NOT NULL,
   `train_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `departure_time` datetime NOT NULL,
-  `direction` tinyint NULL DEFAULT NULL,
-  `router_id` int NULL DEFAULT NULL,
+  `router_id` bigint NULL DEFAULT NULL,
   PRIMARY KEY (`train_id`, `departure_time`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
@@ -83,12 +82,13 @@ CREATE TABLE `refund_info`  (
 -- ----------------------------
 DROP TABLE IF EXISTS `router`;
 CREATE TABLE `router`  (
-  `router_id` int NOT NULL AUTO_INCREMENT COMMENT '路线ID，主键',
+  `router_id` bigint NOT NULL COMMENT '路线ID，主键',
   `router_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '路线名称',
   `total_duration` double NOT NULL DEFAULT 0 COMMENT '路线总时长(分钟)',
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-  PRIMARY KEY (`router_id`) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '路线基本信息表' ROW_FORMAT = Dynamic;
+  PRIMARY KEY (`router_id`) USING BTREE,
+  INDEX `router_name`(`router_name` ASC) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '路线基本信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for router_station
@@ -96,7 +96,7 @@ CREATE TABLE `router`  (
 DROP TABLE IF EXISTS `router_station`;
 CREATE TABLE `router_station`  (
   `id` int NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-  `router_id` int NOT NULL COMMENT '路线ID,实则是列车id',
+  `router_id` bigint NOT NULL COMMENT '路线ID,实则是列车id',
   `station_seq` int NOT NULL COMMENT '途径点序号（由1开始）',
   `station_id` int NOT NULL COMMENT '站点ID',
   `stay_minutes` int NULL DEFAULT 0 COMMENT '停留分钟数',
@@ -106,7 +106,7 @@ CREATE TABLE `router_station`  (
   INDEX `idx_train_id`(`router_id` ASC) USING BTREE,
   INDEX `idx_station_id`(`station_id` ASC) USING BTREE,
   INDEX `idx_station_seq`(`station_seq` ASC) USING BTREE,
-  CONSTRAINT `fk_router_station_router` FOREIGN KEY (`router_id`) REFERENCES `router` (`router_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_train_router_id` FOREIGN KEY (`router_id`) REFERENCES `router` (`router_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_train_station_station` FOREIGN KEY (`station_id`) REFERENCES `station` (`station_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 76 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次途径站点表' ROW_FORMAT = DYNAMIC;
 
@@ -193,8 +193,8 @@ CREATE TABLE `train_info`  (
   `train_id` int NOT NULL AUTO_INCREMENT COMMENT '车次ID(主键)',
   `train_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '车次编号(如G123)',
   `time_consuming` int NULL DEFAULT NULL,
-  `router_id` int NULL DEFAULT NULL COMMENT '路线id',
-  `oppsite_router_id` int NULL DEFAULT NULL,
+  `router_id` bigint NULL DEFAULT NULL COMMENT '路线id',
+  `oppsite_router_id` bigint NULL DEFAULT NULL,
   PRIMARY KEY (`train_id`) USING BTREE,
   UNIQUE INDEX `train_number`(`train_number` ASC) USING BTREE,
   INDEX `idx_train_number`(`train_number` ASC) USING BTREE
@@ -207,7 +207,7 @@ DROP TABLE IF EXISTS `train_schedule_watermark`;
 CREATE TABLE `train_schedule_watermark`  (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `train_id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '车次号',
-  `route_id` int NOT NULL COMMENT '路线ID',
+  `route_id` bigint NOT NULL COMMENT '路线ID',
   `depart_time` datetime NOT NULL COMMENT '始发时间',
   `arrive_time` datetime NOT NULL COMMENT '终到时间',
   `updated_by` int NULL DEFAULT NULL COMMENT '创建人ID',
