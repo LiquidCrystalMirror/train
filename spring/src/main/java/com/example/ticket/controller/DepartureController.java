@@ -59,10 +59,10 @@ public class DepartureController {
     }
 
     /**
-     * 创建发车时间表
+     * 创建发车时间表（带完整验证）
      */
     @PostMapping("/create")
-    public ApiResult<Void> createSchedule(@RequestBody Map<String, Object> params) {
+    public ApiResult<Map<String, Object>> createSchedule(@RequestBody Map<String, Object> params) {
         Integer trainId = (Integer) params.get("trainId");
         String departureTimeStr = (String) params.get("departureTime");
         Long routerId = params.get("routerId") != null ? ((Number) params.get("routerId")).longValue() : null;
@@ -71,27 +71,20 @@ public class DepartureController {
             return ApiResult.error(400, "参数不完整");
         }
         
-        // 检查列车是否存在
-        TrainInfo train = trainService.getById(trainId);
-        if (train == null) {
-            return ApiResult.error(400, "列车不存在");
-        }
-        
         LocalDateTime departureTime = LocalDateTime.parse(departureTimeStr);
         
-        // 检查是否有时间冲突
-        if (departureScheduleService.hasConflict(trainId, departureTime, departureTime.plusHours(1))) {
-            return ApiResult.error(400, "该时间段已有车次安排");
+        // 使用新的验证方法
+        Map<String, Object> result = departureScheduleService.createScheduleWithValidation(
+                trainId, departureTime, routerId);
+        
+        Boolean success = (Boolean) result.get("success");
+        String message = (String) result.get("message");
+        
+        if (success) {
+            return ApiResult.success(message, result);
+        } else {
+            return ApiResult.error(400, message);
         }
-        
-        DepartureSchedule schedule = new DepartureSchedule();
-        schedule.setTrainId(trainId);
-        schedule.setTrainName(train.getTrainNumber());
-        schedule.setDepartureTime(departureTime);
-        schedule.setRouterId(routerId);
-        
-        boolean result = departureScheduleService.createSchedule(schedule);
-        return result ? ApiResult.success("创建成功") : ApiResult.error(400, "创建失败");
     }
 
     /**

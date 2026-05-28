@@ -18,9 +18,12 @@
 
     <!-- 检查指定时间段是否有冲突的车次 -->
     <select id="selectConflictSchedules" resultType="com.example.ticket.entity.DepartureSchedule">
-        SELECT * FROM departure_schedule
-        WHERE train_id = #{trainId}
-        AND departure_time BETWEEN #{startTime} AND #{endTime}
+        SELECT ds.* 
+        FROM departure_schedule ds
+        INNER JOIN router r ON ds.router_id = r.router_id
+        WHERE ds.train_id = #{trainId}
+        AND ds.departure_time &lt; #{endTime}
+        AND DATE_ADD(ds.departure_time, INTERVAL r.total_duration MINUTE) &gt; #{startTime}
     </select>
 
 </mapper>

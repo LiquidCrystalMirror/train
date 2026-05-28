@@ -32,5 +32,10 @@
             arrive_time = VALUES(arrive_time),
             updated_by = VALUES(updatedBy)
     </insert>
+    
+    <!-- 删除旧的实现，改为先删除再插入 -->
+    <delete id="deleteByTrainId">
+        DELETE FROM train_schedule_watermark WHERE train_id = #{trainId}
+    </delete>
 
 </mapper>

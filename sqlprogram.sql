@@ -11,7 +11,7 @@
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 28/05/2026 17:30:13
+ Date: 28/05/2026 19:48:01
 */
 
 SET NAMES utf8mb4;
@@ -35,7 +35,7 @@ CREATE TABLE `carriage_info`  (
 DROP TABLE IF EXISTS `departure_schedule`;
 CREATE TABLE `departure_schedule`  (
   `train_id` int NOT NULL,
-  `train_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `train_number` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `departure_time` datetime NOT NULL,
   `router_id` bigint NULL DEFAULT NULL,
   PRIMARY KEY (`train_id`, `departure_time`) USING BTREE
@@ -108,7 +108,7 @@ CREATE TABLE `router_station`  (
   INDEX `idx_station_seq`(`station_seq` ASC) USING BTREE,
   CONSTRAINT `fk_train_router_id` FOREIGN KEY (`router_id`) REFERENCES `router` (`router_id`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `fk_train_station_station` FOREIGN KEY (`station_id`) REFERENCES `station` (`station_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 76 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次途径站点表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 82 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次途径站点表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for sale_info
@@ -198,7 +198,7 @@ CREATE TABLE `train_info`  (
   PRIMARY KEY (`train_id`) USING BTREE,
   UNIQUE INDEX `train_number`(`train_number` ASC) USING BTREE,
   INDEX `idx_train_number`(`train_number` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 18 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for train_schedule_watermark
@@ -212,7 +212,7 @@ CREATE TABLE `train_schedule_watermark`  (
   `arrive_time` datetime NOT NULL COMMENT '终到时间',
   `updated_by` int NULL DEFAULT NULL COMMENT '创建人ID',
   PRIMARY KEY (`id`) USING BTREE,
-  UNIQUE INDEX `uk_time_slot`(`train_id` ASC, `depart_time` ASC, `arrive_time` ASC) USING BTREE,
+  UNIQUE INDEX `uk_train`(`train_id` ASC) USING BTREE,
   INDEX `idx_train_time`(`train_id` ASC, `depart_time` ASC, `arrive_time` ASC) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次时间水位表-防止时间冲突' ROW_FORMAT = DYNAMIC;
 

@@ -59,4 +59,12 @@ public interface TrainInfoMapper extends BaseMapper<TrainInfo> {
     @Select("SELECT * FROM train_info WHERE departure_time BETWEEN #{startTime} AND #{endTime}")
     List<TrainInfo> selectByDepartureTimeRange(@Param("startTime") LocalDateTime startTime,
                                                @Param("endTime") LocalDateTime endTime);
+    
+    /**
+     * 根据路线ID查询列车
+     * @param routerId 路线ID
+     * @return 列车信息
+     */
+    @Select("SELECT * FROM train_info WHERE router_id = #{routerId}")
+    TrainInfo selectByRouterId(@Param("routerId") Long routerId);
 }

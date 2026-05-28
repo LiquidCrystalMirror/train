@@ -30,10 +30,10 @@ public class DepartureSchedule {
     private Integer trainId;
 
     /**
-     * 车次编号(冗余字段,方便查询)
+     * 车次编号(冗余字段,方便查询，关联train_info.train_number)
      */
-    @TableField("train_name")
-    private String trainName;
+    @TableField("train_number")
+    private String trainNumber;
 
     /**
      * 发车时间(具体的年月日时分)

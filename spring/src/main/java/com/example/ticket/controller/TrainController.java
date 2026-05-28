@@ -22,26 +22,39 @@ public class TrainController {
     private TrainInfoMapper trainInfoMapper;
 
     @PostMapping("/add")
-    public ApiResult<Void> add(@RequestBody TrainInfo trainInfo) {
-        // 验证route_id是否存在(如果有设置)
-        if (trainInfo.getRouterId() != null) {
-            // TODO: 可以添加验证路线是否存在的逻辑
-        }
-        boolean save = trainService.save(trainInfo);
-        return save ? ApiResult.success("添加成功") : ApiResult.error(400, "添加失败");
+    public ApiResult<Integer> add(@RequestBody Map<String, Object> params) {
+        String trainNumber = (String) params.get("trainNumber");
+        Long routerId = params.get("routerId") != null ? 
+                ((Number) params.get("routerId")).longValue() : null;
+        
+        Integer forwardTrainId = trainService.createTrainWithReturn(trainNumber, routerId);
+        return ApiResult.success("添加成功，往返列车已创建", forwardTrainId);
     }
 
     @PostMapping("/update")
-    public ApiResult<Void> update(@RequestBody TrainInfo trainInfo) {
-        boolean update = trainService.updateById(trainInfo);
-        return update ? ApiResult.success("更新成功") : ApiResult.error(400, "更新失败");
+    public ApiResult<Void> update(@RequestBody Map<String, Object> params) {
+        Integer trainId = params.get("trainId") != null ? 
+                ((Number) params.get("trainId")).intValue() : null;
+        String trainNumber = (String) params.get("trainNumber");
+        Long routerId = params.get("routerId") != null ? 
+                ((Number) params.get("routerId")).longValue() : null;
+        
+        if (trainId == null) {
+            return ApiResult.error(400, "列车ID不能为空");
+        }
+        
+        boolean success = trainService.updateTrainWithReturn(trainId, trainNumber, routerId);
+        return success ? ApiResult.success("更新成功，往返列车已同步更新") : ApiResult.error(400, "更新失败");
     }
 
     @PostMapping("/delete")
     public ApiResult<Void> delete(@RequestBody Map<String, Integer> params) {
         Integer id = params.get("id");
-        boolean remove = trainService.removeById(id);
-        return remove ? ApiResult.success("删除成功") : ApiResult.error(400, "删除失败");
+        if (id == null) {
+            return ApiResult.error(400, "列车ID不能为空");
+        }
+        boolean success = trainService.deleteTrainWithReturn(id);
+        return success ? ApiResult.success("删除成功，往返列车已同步删除") : ApiResult.error(400, "删除失败");
     }
 
     @PostMapping("/query/number")

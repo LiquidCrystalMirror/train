@@ -30,4 +30,9 @@ public interface TrainScheduleWatermarkMapper extends BaseMapper<TrainScheduleWa
      * 更新或插入水位记录(只保留最新的)
      */
     int upsertWatermark(TrainScheduleWatermark watermark);
+    
+    /**
+     * 删除指定列车的水位记录
+     */
+    int deleteByTrainId(@Param("trainId") String trainId);
 }

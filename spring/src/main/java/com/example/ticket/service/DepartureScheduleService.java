@@ -5,6 +5,7 @@ import com.example.ticket.entity.DepartureSchedule;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 车次发车时间服务接口
@@ -27,7 +28,11 @@ public interface DepartureScheduleService extends IService<DepartureSchedule> {
     boolean hasConflict(Integer trainId, LocalDateTime startTime, LocalDateTime endTime);
     
     /**
-     * 创建发车时间表
+     * 创建发车时间表（带水位表验证和方向交替检查）
+     * @param trainId 列车ID
+     * @param departureTime 发车时间
+     * @param routerId 路线ID
+     * @return 创建结果，包含成功/失败信息和错误消息
      */
-    boolean createSchedule(DepartureSchedule schedule);
+    Map<String, Object> createScheduleWithValidation(Integer trainId, LocalDateTime departureTime, Long routerId);
 }
