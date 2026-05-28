@@ -1,10 +1,12 @@
 package com.example.ticket.controller;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.ticket.entity.DepartureSchedule;
 import com.example.ticket.entity.TrainInfo;
 import com.example.ticket.service.DepartureScheduleService;
 import com.example.ticket.service.TrainService;
 import com.example.ticket.util.ApiResult;
+import com.example.ticket.vo.TrainScheduleQueryVO;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
@@ -99,5 +101,35 @@ public class DepartureController {
         
         boolean result = departureScheduleService.removeById(id);
         return result ? ApiResult.success("删除成功") : ApiResult.error(400, "删除失败");
+    }
+
+
+    /**
+     * 查询直达车次
+     * 请求体示例：
+     * {
+     *   "startStationId": 1,
+     *   "endStationId": 5,
+     *   "startTime": "2025-05-28T10:00:00",
+     *   "pageNum": 1,
+     *   "pageSize": 10
+     * }
+     */
+    @PostMapping("/queryByStations")
+    public ApiResult<Page<TrainScheduleQueryVO>> queryByStations(@RequestBody Map<String, Object> params) {
+        Integer startStationId = params.get("startStationId") != null ?
+                ((Number) params.get("startStationId")).intValue() : null;
+        Integer endStationId = params.get("endStationId") != null ?
+                ((Number) params.get("endStationId")).intValue() : null;
+        LocalDateTime startTime = params.get("startTime") != null ?
+                LocalDateTime.parse((String) params.get("startTime")) : null;
+        Integer pageNum = params.get("pageNum") != null ?
+                ((Number) params.get("pageNum")).intValue() : null;
+        Integer pageSize = params.get("pageSize") != null ?
+                ((Number) params.get("pageSize")).intValue() : null;
+
+        Page<TrainScheduleQueryVO> page = departureScheduleService.querySchedulesByStations(
+                startStationId, endStationId, startTime, pageNum, pageSize);
+        return ApiResult.success("查询成功", page);
     }
 }

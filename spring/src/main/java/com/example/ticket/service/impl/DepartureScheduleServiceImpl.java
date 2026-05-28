@@ -1,5 +1,6 @@
 package com.example.ticket.service.impl;
 
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.ticket.entity.DepartureSchedule;
 import com.example.ticket.entity.Router;
@@ -12,6 +13,7 @@ import com.example.ticket.mapper.TrainScheduleWatermarkMapper;
 import com.example.ticket.service.DepartureScheduleService;
 import com.example.ticket.service.TrainService;
 import com.example.ticket.util.DepartureTimeValidator;
+import com.example.ticket.vo.TrainScheduleQueryVO;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -159,4 +161,17 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
         
         return result;
     }
+
+    @Override
+    public Page<TrainScheduleQueryVO> querySchedulesByStations(Integer startStationId, Integer endStationId,
+                                                               LocalDateTime startTime, Integer pageNum, Integer pageSize) {
+        if (startStationId == null || endStationId == null || startTime == null) {
+            throw new BusinessException("起点站、终点站和起始时间不能为空");
+        }
+        if (pageNum == null || pageNum < 1) pageNum = 1;
+        if (pageSize == null || pageSize < 1) pageSize = 10;
+        Page<TrainScheduleQueryVO> page = new Page<>(pageNum, pageSize);
+        return baseMapper.selectSchedulesByStartEndStationAndTime(page, startStationId, endStationId, startTime);
+    }
+
 }

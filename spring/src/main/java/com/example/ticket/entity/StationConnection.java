@@ -23,6 +23,5 @@ public class StationConnection {
     @TableField("travel_time_minutes")
     private Double travelTimeMinutes;
 
-    @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;
 }

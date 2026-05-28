@@ -72,20 +72,51 @@ public class RouterServiceImpl extends ServiceImpl<RouterMapper, Router> impleme
         if (router == null) {
             throw new BusinessException("路线不存在");
         }
-        
-        // 更新名称
+
+        long baseId = routerId & ~1L;
+        Long forwardRouteId = baseId;      // 往程ID（偶数）
+        Long returnRouteId = baseId + 1;   // 返程ID（奇数）
+        boolean isForward = (routerId & 1L) == 0L; // true=往程，false=返程
+
+        // 1. 更新路线名称（基础名称自动加后缀）
         if (routerName != null && !routerName.trim().isEmpty()) {
-            router.setRouterName(routerName);
-            this.updateById(router);
+            String baseName = routerName.trim();
+            Router forwardRouter = new Router();
+            forwardRouter.setRouterId(forwardRouteId);
+            forwardRouter.setRouterName(baseName + "（往）");
+
+            Router returnRouter = new Router();
+            returnRouter.setRouterId(returnRouteId);
+            returnRouter.setRouterName(baseName + "（返）");
+
+            this.updateById(forwardRouter);
+            this.updateById(returnRouter);
         }
-        
-        // 更新站点
+
+        // 2. 更新站点列表
         if (stationsData != null && !stationsData.isEmpty()) {
-            List<RouterStation> stations = convertToRouterStations(stationsData);
-            routerStationService.saveRouterStations(routerId, stations);
-            updateTotalDuration(routerId);
+            List<RouterStation> currentStations = convertToRouterStations(stationsData);
+            currentStations.sort(Comparator.comparingInt(RouterStation::getStationSeq));
+
+            if (isForward) {
+                // 更新往程站点
+                routerStationService.saveRouterStations(forwardRouteId, currentStations);
+                updateTotalDuration(forwardRouteId);
+                // 反转得到返程站点并更新
+                List<RouterStation> returnStations = routerStationService.reverseStations(currentStations);
+                routerStationService.saveRouterStations(returnRouteId, returnStations);
+                updateTotalDuration(returnRouteId);
+            } else {
+                // 更新返程站点
+                routerStationService.saveRouterStations(returnRouteId, currentStations);
+                updateTotalDuration(returnRouteId);
+                // 反转得到往程站点并更新
+                List<RouterStation> forwardStations = routerStationService.reverseStations(currentStations);
+                routerStationService.saveRouterStations(forwardRouteId, forwardStations);
+                updateTotalDuration(forwardRouteId);
+            }
         }
-        
+
         return true;
     }
 
