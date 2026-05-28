@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.example.ticket.entity.RouterStation;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
+import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
@@ -22,4 +23,7 @@ public interface RouterStationMapper extends BaseMapper<RouterStation> {
      * 删除指定路线的所有站点关联
      */
     int deleteByRouterId(@Param("routerId") Integer routerId);
+
+    @Select("SELECT MAX(router_id) FROM router_station")
+    Integer selectMaxRouterId();
 }

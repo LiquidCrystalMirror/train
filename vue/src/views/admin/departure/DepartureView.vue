@@ -13,10 +13,10 @@
         <el-form-item label="列车">
           <el-select v-model="searchForm.trainId" placeholder="选择列车" clearable style="width: 200px;">
             <el-option
-              v-for="train in trainList"
-              :key="train.trainId"
-              :label="train.trainNumber"
-              :value="train.trainId"
+                v-for="train in trainList"
+                :key="train.trainId"
+                :label="train.trainNumber"
+                :value="train.trainId"
             />
           </el-select>
         </el-form-item>
@@ -25,24 +25,29 @@
         </el-form-item>
       </el-form>
 
-      <!-- 车次列表 -->
-      <el-table :data="scheduleList" border stripe>
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="trainName" label="车次编号" width="120" align="center" />
-        <el-table-column prop="departureTime" label="发车时间" width="180" align="center" />
-        <el-table-column label="运行方向" width="120" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.direction === 0 ? 'success' : 'warning'">
-              {{ row.direction === 0 ? '顺行' : '逆行' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right" align="center">
-          <template #default="{ row }">
-            <el-button size="small" type="danger" @click="deleteScheduleHandler(row.id)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
+      <!-- 车次列表 - 仅在有有效查询时显示 -->
+      <div v-if="showTable">
+        <el-table :data="scheduleList" border stripe>
+          <el-table-column prop="id" label="ID" width="80" align="center" />
+          <el-table-column prop="trainName" label="车次编号" width="120" align="center" />
+          <el-table-column prop="departureTime" label="发车时间" width="180" align="center" />
+          <el-table-column label="运行方向" width="120" align="center">
+            <template #default="{ row }">
+              <el-tag :type="row.direction === 0 ? 'success' : 'warning'">
+                {{ row.direction === 0 ? '顺行' : '逆行' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right" align="center">
+            <template #default="{ row }">
+              <el-button size="small" type="danger" @click="deleteScheduleHandler(row.id)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div v-else class="empty-placeholder">
+        <el-empty description="请选择列车并点击查询" :image-size="120" />
+      </div>
     </el-card>
 
     <!-- 创建车次对话框 -->
@@ -51,22 +56,22 @@
         <el-form-item label="选择列车" required>
           <el-select v-model="scheduleForm.trainId" placeholder="选择列车" style="width: 100%;">
             <el-option
-              v-for="train in trainList"
-              :key="train.trainId"
-              :label="`${train.trainNumber} (路线${train.routerId})`"
-              :value="train.trainId"
+                v-for="train in trainList"
+                :key="train.trainId"
+                :label="`${train.trainNumber} (路线${train.routerId})`"
+                :value="train.trainId"
             />
           </el-select>
         </el-form-item>
 
         <el-form-item label="发车时间" required>
           <el-date-picker
-            v-model="scheduleForm.departureTime"
-            type="datetime"
-            placeholder="选择发车时间"
-            format="YYYY-MM-DD HH:mm:ss"
-            value-format="YYYY-MM-DDTHH:mm:ss"
-            style="width: 100%;"
+              v-model="scheduleForm.departureTime"
+              type="datetime"
+              placeholder="选择发车时间"
+              format="YYYY-MM-DD HH:mm:ss"
+              value-format="YYYY-MM-DDTHH:mm:ss"
+              style="width: 100%;"
           />
         </el-form-item>
 
@@ -78,11 +83,11 @@
         </el-form-item>
 
         <el-alert
-          v-if="selectedTrainInfo"
-          title="列车信息"
-          type="info"
-          :closable="false"
-          show-icon
+            v-if="selectedTrainInfo"
+            title="列车信息"
+            type="info"
+            :closable="false"
+            show-icon
         >
           <div>车次编号: {{ selectedTrainInfo.trainNumber }}</div>
           <div>路线ID: {{ selectedTrainInfo.routerId }}</div>
@@ -99,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getSchedules, createSchedule, deleteSchedule } from '@/api/DepartureApi.js'
 import { getTrainList } from '@/api/TrainApi.js'
@@ -107,6 +112,7 @@ import { getTrainList } from '@/api/TrainApi.js'
 const scheduleList = ref([])
 const trainList = ref([])
 const dialogVisible = ref(false)
+const showTable = ref(false) // 控制表格显示/隐藏
 
 const searchForm = ref({
   trainId: null
@@ -123,6 +129,18 @@ const selectedTrainInfo = computed(() => {
   return trainList.value.find(t => t.trainId === scheduleForm.value.trainId)
 })
 
+// 监听列车选择变化，当未选择列车时隐藏表格并清空数据
+watch(() => searchForm.value.trainId, (newVal) => {
+  if (!newVal) {
+    showTable.value = false
+    scheduleList.value = []
+  } else {
+    // 切换列车时，隐藏之前的表格数据，需要重新点击查询
+    showTable.value = false
+    scheduleList.value = []
+  }
+})
+
 // 加载列车列表
 const loadTrainList = async () => {
   try {
@@ -137,8 +155,11 @@ const loadTrainList = async () => {
 
 // 加载车次列表
 const loadSchedules = async () => {
+  // 未选择列车时，不发送请求，隐藏表格并提示
   if (!searchForm.value.trainId) {
     ElMessage.warning('请选择列车')
+    showTable.value = false
+    scheduleList.value = []
     return
   }
 
@@ -146,12 +167,17 @@ const loadSchedules = async () => {
     const res = await getSchedules(searchForm.value.trainId)
     if (res.code === 200) {
       scheduleList.value = res.data || []
+      showTable.value = true // 查询成功，显示表格
     } else {
       ElMessage.error(res.message || '查询失败')
+      showTable.value = false
+      scheduleList.value = []
     }
   } catch (error) {
     console.error('查询失败:', error)
     ElMessage.error('查询失败')
+    showTable.value = false
+    scheduleList.value = []
   }
 }
 
@@ -183,9 +209,9 @@ const handleCreateSchedule = async () => {
     if (res.code === 200) {
       ElMessage.success('创建成功')
       dialogVisible.value = false
-      // 如果当前正在查看该车次的列表,刷新列表
+      // 如果当前正在查看该车次的列表，刷新列表
       if (searchForm.value.trainId === scheduleForm.value.trainId) {
-        loadSchedules()
+        await loadSchedules()
       }
     } else {
       ElMessage.error(res.message || '创建失败')
@@ -202,11 +228,12 @@ const deleteScheduleHandler = async (id) => {
     await ElMessageBox.confirm('确定要删除该车次吗?', '提示', {
       type: 'warning'
     })
-    
+
     const res = await deleteSchedule(id)
     if (res.code === 200) {
       ElMessage.success('删除成功')
-      loadSchedules()
+      // 删除后重新加载列表，保持表格显示状态
+      await loadSchedules()
     } else {
       ElMessage.error(res.message || '删除失败')
     }
@@ -236,5 +263,12 @@ onMounted(() => {
 
 .search-form {
   margin-bottom: 20px;
+}
+
+.empty-placeholder {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

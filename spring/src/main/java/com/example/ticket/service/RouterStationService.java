@@ -24,4 +24,7 @@ public interface RouterStationService extends IService<RouterStation> {
      * 删除指定路线的所有站点关联
      */
     boolean deleteByRouterId(Integer routerId);
+
+    // RouterStationService 接口增加
+    Double calculateTotalDuration(Integer routerId);
 }

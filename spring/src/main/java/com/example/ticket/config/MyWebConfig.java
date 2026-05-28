@@ -24,18 +24,18 @@ public class MyWebConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/static/");
     }
 
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(jwtInterceptor)
-                .addPathPatterns("/api/v1/**")
-                .excludePathPatterns(
-                        "/api/v1/g/**",
-                        "/api/v1/login",
-                        "/api/v1/reg",
-                        "/api/v1/admin/reg",
-                        "/api/v1/index"
-                );
-    }
+//    @Override
+//    public void addInterceptors(InterceptorRegistry registry) {
+//        registry.addInterceptor(jwtInterceptor)
+//                .addPathPatterns("/api/v1/**")
+//                .excludePathPatterns(
+//                        "/api/v1/g/**",
+//                        "/api/v1/login",
+//                        "/api/v1/reg",
+//                        "/api/v1/admin/reg",
+//                        "/api/v1/index"
+//                );
+//    }
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")

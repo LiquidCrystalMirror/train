@@ -51,12 +51,7 @@ public class TrainController {
         return ApiResult.success("查询成功", trains);
     }
 
-    @PostMapping("/query/time")
-    public ApiResult<List<TrainInfo>> queryByTime(@RequestBody Map<String, String> params) {
-        LocalDateTime time = LocalDateTime.parse(params.get("time"));
-        List<TrainInfo> trains = trainInfoMapper.selectByDepartureTime(time);
-        return ApiResult.success("查询成功", trains);
-    }
+
 
     @PostMapping("/list")
     public ApiResult<Page<TrainInfo>> trainPage(@RequestBody Map<String, Object> params) {
@@ -69,38 +64,6 @@ public class TrainController {
         return ApiResult.success("查询成功", page);
     }
     
-    /**
-     * 根据起止站点查询车次
-     */
-    @PostMapping("/query/stations")
-    public ApiResult<List<TrainInfo>> queryByStations(@RequestBody Map<String, Integer> params) {
-        Integer startStationId = params.get("startStationId");
-        Integer endStationId = params.get("endStationId");
-        
-        if (startStationId == null || endStationId == null) {
-            throw new com.example.ticket.exception.BusinessException("起点站和终点站ID不能为空");
-        }
-        
-        List<TrainInfo> trains = trainInfoMapper.selectByStations(startStationId, endStationId);
-        return ApiResult.success("查询成功", trains);
-    }
-    
-    /**
-     * 根据发车时间范围查询车次
-     */
-    @PostMapping("/query/timeRange")
-    public ApiResult<List<TrainInfo>> queryByTimeRange(@RequestBody Map<String, String> params) {
-        String startTimeStr = params.get("startTime");
-        String endTimeStr = params.get("endTime");
-        
-        if (startTimeStr == null || endTimeStr == null) {
-            throw new com.example.ticket.exception.BusinessException("开始时间和结束时间不能为空");
-        }
-        
-        LocalDateTime startTime = LocalDateTime.parse(startTimeStr);
-        LocalDateTime endTime = LocalDateTime.parse(endTimeStr);
-        
-        List<TrainInfo> trains = trainInfoMapper.selectByDepartureTimeRange(startTime, endTime);
-        return ApiResult.success("查询成功", trains);
-    }
+
+
 }

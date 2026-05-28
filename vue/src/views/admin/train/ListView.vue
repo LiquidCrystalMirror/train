@@ -23,7 +23,7 @@
           </el-col>
         </el-row>
       </el-form>
-      
+
       <!-- 操作按钮 -->
       <div class="action-buttons">
         <el-button type="primary" @click="handleAdd">
@@ -37,11 +37,11 @@
     <div class="table-container">
       <el-table :data="tableData" stripe border style="width: 100%;">
         <el-table-column prop="trainId" label="ID" align="center" />
-        <el-table-column prop="trainNumber" label="车次号" align="center" />
-        <el-table-column prop="routerId" label="路线ID" align="center">
+        <el-table-column prop="trainNumber" label="列车号" align="center" />
+        <el-table-column prop="routerId" label="路线ID" align="center" />
+        <el-table-column label="路线名称" align="center">
           <template #default="scope">
-            <el-tag v-if="scope.row.routerId" type="success">路线{{ scope.row.routerId }}</el-tag>
-            <span v-else>-</span>
+            {{ getRouterName(scope.row.routerId) }}
           </template>
         </el-table-column>
         <el-table-column prop="timeConsuming" label="总耗时(分钟)" align="center" />
@@ -60,17 +60,17 @@
 
     <!-- 分页 -->
     <el-pagination
-      class="mgt-4"
-      v-model:current-page="searchForm.pageNum"
-      v-model:page-size="searchForm.pageSize"
-      :page-sizes="[5, 10, 20, 50]"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="loadData"
-      @current-change="loadData"
+        class="mgt-4"
+        v-model:current-page="searchForm.pageNum"
+        v-model:page-size="searchForm.pageSize"
+        :page-sizes="[5, 10, 20, 50]"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="loadData"
+        @current-change="loadData"
     />
 
-    <!-- 编辑对话框 -->
+    <!-- 编辑/新增对话框 -->
     <el-dialog :title="form.trainId ? '编辑列车' : '新增列车'" v-model="dialogVisible" width="600px">
       <el-form label-width="100px" :model="form" :rules="rules" ref="formRef">
         <el-form-item label="车次号" prop="trainNumber">
@@ -79,15 +79,16 @@
         <el-form-item label="所属路线" prop="routerId">
           <el-select v-model="form.routerId" placeholder="选择路线" style="width: 100%" clearable>
             <el-option
-              v-for="route in routeList"
-              :key="route.routerId"
-              :label="`路线${route.routerId} (${route.stationCount}个站点)`"
-              :value="route.routerId"
+                v-for="route in routeList"
+                :key="route.routerId"
+                :label="`${route.routerId}-${route.routerName}`"
+                :value="route.routerId"
             />
           </el-select>
         </el-form-item>
-        <el-form-item label="总耗时(分钟)" prop="timeConsuming">
-          <el-input-number v-model="form.timeConsuming" :min="1" :max="1440" style="width: 100%" />
+        <!-- 总耗时不再允许编辑，仅作展示（可选） -->
+        <el-form-item label="总耗时" v-if="form.routerId">
+          <el-input :value="getSelectedRouteDuration()" disabled placeholder="选择路线后自动计算" />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -99,10 +100,11 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
-import { ElMessage } from 'element-plus'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
+import {ref, onMounted} from 'vue'
+import {ElMessage} from 'element-plus'
+import {Search, Refresh, Plus} from '@element-plus/icons-vue'
 import * as TrainApi from '@/api/TrainApi.js'
+import {getRouteList} from '@/api/RouteApi.js'
 
 const searchForm = ref({
   find: '',
@@ -112,38 +114,54 @@ const searchForm = ref({
 
 let total = ref(0)
 const tableData = ref([])
-const routeList = ref([])
+const routeList = ref([])      // 存储所有路线 { routerId, routerName, totalDuration }
 let dialogVisible = ref(false)
 let form = ref({
   trainNumber: '',
-  routerId: null,
-  timeConsuming: null
+  routerId: null
+  // 注意：不包含 timeConsuming，后端会根据 routerId 自动计算
 })
 let formRef = ref(null)
 
+// 表单验证规则
 const rules = {
-  trainNumber: [{ required: true, message: '请输入车次号', trigger: 'blur' }]
+  trainNumber: [{required: true, message: '请输入车次号', trigger: 'blur'}],
+  routerId: [{required: true, message: '请选择路线', trigger: 'change'}]
 }
 
-// 格式化日期时间
-const formatDateTime = (dateTime) => {
-  if (!dateTime) return '-'
-  return dateTime.replace('T', ' ').substring(0, 19)
+// 根据路线ID获取路线名称
+const getRouterName = (routerId) => {
+  if (!routerId) return '-'
+  const route = routeList.value.find(r => r.routerId === routerId)
+  return route ? route.routerName : `路线${routerId}`
+}
+
+// 获取当前选中路线的总耗时（用于对话框展示）
+const getSelectedRouteDuration = () => {
+  if (!form.value.routerId) return '请先选择路线'
+  const route = routeList.value.find(r => r.routerId === form.value.routerId)
+  if (route && route.totalDuration) {
+    return `${route.totalDuration} 分钟`
+  }
+  return '该路线尚未配置耗时'
 }
 
 // 加载所有路线
 const loadRouteList = async () => {
   try {
-    // TODO: 应该有一个获取所有路线的API，而不是循环查询
-    // 暂时使用空数组，等后端提供接口后再实现
-    routeList.value = []
-    console.log('路线列表功能待实现：需要后端提供获取所有路线的接口')
+    const res = await getRouteList()
+    if (res.code === 200) {
+      routeList.value = res.data || []
+    } else {
+      ElMessage.error('加载路线列表失败')
+    }
   } catch (error) {
     console.error('加载路线列表失败:', error)
+    ElMessage.error('加载路线列表失败')
   }
 }
 
-// 加载数据
+// 加载车次数据
 const loadData = () => {
   TrainApi.getTrainPage(searchForm.value).then((resp) => {
     if (resp.code === 200 && resp.data) {
@@ -170,21 +188,26 @@ const handleAdd = () => {
   dialogVisible.value = true
   form.value = {
     trainNumber: '',
-    routerId: null,
-    timeConsuming: null
+    routerId: null
   }
 }
 
 // 编辑
 const handleEdit = (row) => {
   dialogVisible.value = true
-  form.value = JSON.parse(JSON.stringify(row))
+  // 只回填车次号和路线ID，总耗时由后端维护
+  form.value = {
+    trainId: row.trainId,
+    trainNumber: row.trainNumber,
+    routerId: row.routerId
+  }
 }
 
-// 保存
+// 保存（新增或更新）
 const handleSave = () => {
   formRef.value.validate().then(() => {
     const apiCall = form.value.trainId ? TrainApi.updateTrain : TrainApi.addTrain
+    // 注意：不传递 timeConsuming，后端会根据 routerId 自动计算
     apiCall(form.value).then(() => {
       ElMessage.success('保存成功')
       dialogVisible.value = false

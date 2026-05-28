@@ -1,17 +1,17 @@
 /*
- Navicat MySQL Dump SQL
+ Navicat Premium Dump SQL
 
- Source Server         : l1
+ Source Server         : horse1
  Source Server Type    : MySQL
  Source Server Version : 80044 (8.0.44)
  Source Host           : localhost:3306
- Source Schema         : sqlprogram
+ Source Schema         : sqlprogram1
 
  Target Server Type    : MySQL
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 27/05/2026 16:04:10
+ Date: 28/05/2026 16:45:35
 */
 
 SET NAMES utf8mb4;
@@ -27,7 +27,7 @@ CREATE TABLE `carriage_info`  (
   `seat_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `seat_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for departure_schedule
@@ -36,11 +36,11 @@ DROP TABLE IF EXISTS `departure_schedule`;
 CREATE TABLE `departure_schedule`  (
   `train_id` int NOT NULL,
   `train_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `departure_time` datetime NULL DEFAULT NULL,
-  `id` int NOT NULL,
+  `departure_time` datetime NOT NULL,
   `direction` tinyint NULL DEFAULT NULL,
-  PRIMARY KEY (`train_id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+  `router_id` int NULL DEFAULT NULL,
+  PRIMARY KEY (`train_id`, `departure_time`) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for price_schedule
@@ -51,7 +51,7 @@ CREATE TABLE `price_schedule`  (
   `station_count` int NULL DEFAULT NULL,
   `price` double NULL DEFAULT NULL,
   PRIMARY KEY (`train_id`) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for refund_info
@@ -79,23 +79,36 @@ CREATE TABLE `refund_info`  (
 ) ENGINE = InnoDB AUTO_INCREMENT = 5 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '退票信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
+-- Table structure for router
+-- ----------------------------
+DROP TABLE IF EXISTS `router`;
+CREATE TABLE `router`  (
+  `router_id` int NOT NULL AUTO_INCREMENT COMMENT '路线ID，主键',
+  `router_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '路线名称',
+  `total_duration` double NOT NULL DEFAULT 0 COMMENT '路线总时长(分钟)',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  PRIMARY KEY (`router_id`) USING BTREE
+) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '路线基本信息表' ROW_FORMAT = Dynamic;
+
+-- ----------------------------
 -- Table structure for router_station
 -- ----------------------------
 DROP TABLE IF EXISTS `router_station`;
 CREATE TABLE `router_station`  (
   `id` int NOT NULL AUTO_INCREMENT COMMENT '自增主键',
-  `router_id` int NOT NULL COMMENT '路线ID',
+  `router_id` int NOT NULL COMMENT '路线ID,实则是列车id',
   `station_seq` int NOT NULL COMMENT '途径点序号（由1开始）',
   `station_id` int NOT NULL COMMENT '站点ID',
   `stay_minutes` int NULL DEFAULT 0 COMMENT '停留分钟数',
+  `time_prefix_sum` double NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_train_seq`(`router_id` ASC, `station_seq` ASC) USING BTREE,
   INDEX `idx_train_id`(`router_id` ASC) USING BTREE,
   INDEX `idx_station_id`(`station_id` ASC) USING BTREE,
   INDEX `idx_station_seq`(`station_seq` ASC) USING BTREE,
-  CONSTRAINT `fk_train_station_station` FOREIGN KEY (`station_id`) REFERENCES `station` (`station_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  CONSTRAINT `fk_train_station_train` FOREIGN KEY (`router_id`) REFERENCES `train_info` (`train_id`) ON DELETE CASCADE ON UPDATE CASCADE
-) ENGINE = InnoDB AUTO_INCREMENT = 24 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次途径站点表' ROW_FORMAT = DYNAMIC;
+  CONSTRAINT `fk_router_station_router` FOREIGN KEY (`router_id`) REFERENCES `router` (`router_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_train_station_station` FOREIGN KEY (`station_id`) REFERENCES `station` (`station_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE = InnoDB AUTO_INCREMENT = 76 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次途径站点表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for sale_info
@@ -133,7 +146,7 @@ CREATE TABLE `station`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`station_id`) USING BTREE,
   UNIQUE INDEX `uk_station_name`(`station_name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 11 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '站点信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 13 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '站点信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for station_connection
@@ -181,10 +194,11 @@ CREATE TABLE `train_info`  (
   `train_number` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '车次编号(如G123)',
   `time_consuming` int NULL DEFAULT NULL,
   `router_id` int NULL DEFAULT NULL COMMENT '路线id',
+  `oppsite_router_id` int NULL DEFAULT NULL,
   PRIMARY KEY (`train_id`) USING BTREE,
   UNIQUE INDEX `train_number`(`train_number` ASC) USING BTREE,
   INDEX `idx_train_number`(`train_number` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 10 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB AUTO_INCREMENT = 17 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for train_schedule_watermark
@@ -200,7 +214,7 @@ CREATE TABLE `train_schedule_watermark`  (
   PRIMARY KEY (`id`) USING BTREE,
   UNIQUE INDEX `uk_time_slot`(`train_id` ASC, `depart_time` ASC, `arrive_time` ASC) USING BTREE,
   INDEX `idx_train_time`(`train_id` ASC, `depart_time` ASC, `arrive_time` ASC) USING BTREE
-) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次时间水位表-防止时间冲突' ROW_FORMAT = Dynamic;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次时间水位表-防止时间冲突' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for user

@@ -1,15 +1,12 @@
-import { post } from '@/request/request.js'
+// src/api/RouteApi.js
+import { post, get } from '@/request/request.js'
 
-/**
- * 路线管理API
- */
-
-// 查询指定路线的所有站点
+// 查询指定路线的所有站点（已废弃，保留兼容）
 export function getRouteStations(routerId) {
     return post('/api/v1/route/stations', { routerId })
 }
 
-// 创建或更新路线站点关联
+// 创建或更新路线站点关联（已废弃，保留兼容）
 export function saveRouteStations(data) {
     return post('/api/v1/route/save', data)
 }
@@ -22,4 +19,25 @@ export function deleteRoute(routerId) {
 // 验证站点是否联通
 export function validateConnection(stationAId, stationBId) {
     return post('/api/v1/route/validate/connection', { stationAId, stationBId })
+}
+
+// ========== 新增接口 ==========
+// 获取所有路线列表（仅基本信息）
+export function getRouteList() {
+    return get('/api/v1/route/list')
+}
+
+// 获取路线详情（基本信息 + 站点列表）
+export function getRouteDetail(routerId) {
+    return get('/api/v1/route/detail', { routerId })
+}
+
+// 创建路线（基本信息 + 站点列表）
+export function createRoute(data) {
+    return post('/api/v1/route/create', data)
+}
+
+// 更新路线（可更新名称和站点列表）
+export function updateRoute(data) {
+    return post('/api/v1/route/update', data)
 }
