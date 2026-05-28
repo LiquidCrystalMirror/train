@@ -27,10 +27,10 @@ public class TrainScheduleWatermark {
     private String trainId;
 
     /**
-     * 路线ID
+     * 路线ID（关联router表，最后一位表示方向：0=往程，1=返程）
      */
     @TableField("route_id")
-    private Integer routeId;
+    private Long routeId;
 
     /**
      * 始发时间

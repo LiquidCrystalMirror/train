@@ -24,7 +24,7 @@ public interface TrainScheduleWatermarkService extends IService<TrainScheduleWat
     /**
      * 更新水位记录
      */
-    boolean updateWatermark(String trainId, Integer routeId, LocalDateTime departTime, 
+    boolean updateWatermark(String trainId, Long routeId, LocalDateTime departTime, 
                            LocalDateTime arriveTime, Integer updatedBy);
     
     /**

@@ -74,7 +74,7 @@ public class WatermarkController {
     @PostMapping("/update")
     public ApiResult<Void> updateWatermark(@RequestBody Map<String, Object> params) {
         String trainId = (String) params.get("trainId");
-        Integer routeId = (Integer) params.get("routeId");
+        Long routeId = ((Number) params.get("routeId")).longValue();
         String departTimeStr = (String) params.get("departTime");
         String arriveTimeStr = (String) params.get("arriveTime");
         Integer updatedBy = (Integer) params.get("updatedBy");

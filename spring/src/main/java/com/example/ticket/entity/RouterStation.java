@@ -22,7 +22,7 @@ public class RouterStation {
      * 路线ID(对应train_info.router_id)
      */
     @TableField("router_id")
-    private Integer routerId;
+    private Long routerId;
 
     /**
      * 站点序号(从1开始,表示在路线中的顺序)
@@ -41,4 +41,10 @@ public class RouterStation {
      */
     @TableField("stay_minutes")
     private Integer stayMinutes;
+
+    /**
+     * 时间前缀和（从起点到该站点的累计时间，单位：分钟）
+     */
+    @TableField("time_prefix_sum")
+    private Double timePrefixSum;
 }

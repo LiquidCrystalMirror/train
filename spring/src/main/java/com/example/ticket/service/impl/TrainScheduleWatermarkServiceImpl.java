@@ -33,7 +33,7 @@ public class TrainScheduleWatermarkServiceImpl extends ServiceImpl<TrainSchedule
     }
 
     @Override
-    public boolean updateWatermark(String trainId, Integer routeId, LocalDateTime departTime, 
+    public boolean updateWatermark(String trainId, Long routeId, LocalDateTime departTime, 
                                    LocalDateTime arriveTime, Integer updatedBy) {
         TrainScheduleWatermark watermark = new TrainScheduleWatermark();
         watermark.setTrainId(trainId);

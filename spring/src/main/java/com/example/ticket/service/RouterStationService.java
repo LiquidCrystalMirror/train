@@ -1,30 +1,48 @@
 package com.example.ticket.service;
 
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.example.ticket.entity.RouterStation;
 
 import java.util.List;
+import java.util.Map;
 
 /**
- * 路线站点服务接口
+ * 路线站点管理服务接口
  */
-public interface RouterStationService extends IService<RouterStation> {
+public interface RouterStationService {
     
     /**
-     * 根据路线ID查询该路线的所有站点(按序号排序)
+     * 保存路线站点列表
+     * @param routerId 路线ID
+     * @param stations 站点列表
+     * @return 是否成功
      */
-    List<RouterStation> getStationsByRouterId(Integer routerId);
+    boolean saveRouterStations(Long routerId, List<RouterStation> stations);
     
     /**
-     * 创建或更新路线站点关联
+     * 根据路线ID查询站点列表
+     * @param routerId 路线ID
+     * @return 站点列表（按序号排序）
      */
-    boolean saveRouterStations(Integer routerId, List<RouterStation> stations);
+    List<RouterStation> getStationsByRouterId(Long routerId);
     
     /**
-     * 删除指定路线的所有站点关联
+     * 删除指定路线的所有站点
+     * @param routerId 路线ID
+     * @return 是否成功
      */
-    boolean deleteByRouterId(Integer routerId);
-
-    // RouterStationService 接口增加
-    Double calculateTotalDuration(Integer routerId);
+    boolean deleteByRouterId(Long routerId);
+    
+    /**
+     * 计算路线总时长（基于站点联通表的时间）
+     * @param routerId 路线ID
+     * @return 总时长（分钟）
+     */
+    Double calculateTotalDuration(Long routerId);
+    
+    /**
+     * 反转站点列表（用于生成返程路线）
+     * @param stations 原站点列表
+     * @return 反转后的站点列表
+     */
+    List<RouterStation> reverseStations(List<RouterStation> stations);
 }

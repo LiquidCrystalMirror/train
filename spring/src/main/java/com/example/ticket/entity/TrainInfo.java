@@ -23,7 +23,12 @@ public class TrainInfo {
     private Integer timeConsuming;
     
     /**
-     * 路线ID(关联router_station.router_id)
+     * 路线ID(关联router表的router_id，最后一位表示方向：0=往程，1=返程)
      */
-    private Integer routerId;
+    private Long routerId;
+    
+    /**
+     * 反向路线ID
+     */
+    private Long oppsiteRouterId;
 }

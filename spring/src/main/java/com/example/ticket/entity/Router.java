@@ -13,15 +13,15 @@ import java.time.LocalDateTime;
 @TableName("router")
 public class Router {
 
-    @TableId(value = "router_id", type = IdType.AUTO)
-    private Integer routerId;
+    @TableId(value = "router_id", type = IdType.INPUT)
+    private Long routerId;
 
     @TableField("router_name")
     private String routerName;
 
-    private LocalDateTime createTime;
-
-    // Router.java 增加
     @TableField("total_duration")
     private Double totalDuration;
+
+    @TableField(value = "create_time", fill = FieldFill.INSERT)
+    private LocalDateTime createTime;
 }

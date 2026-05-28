@@ -8,22 +8,21 @@ import org.apache.ibatis.annotations.Select;
 
 import java.util.List;
 
-/**
- * 路线站点关联Mapper
- */
 @Mapper
 public interface RouterStationMapper extends BaseMapper<RouterStation> {
     
     /**
-     * 根据路线ID查询该路线的所有站点(按序号排序)
+     * 根据路线ID查询站点列表（按序号排序）
+     * @param routerId 路线ID
+     * @return 站点列表
      */
-    List<RouterStation> selectByRouterId(@Param("routerId") Integer routerId);
+    @Select("SELECT * FROM router_station WHERE router_id = #{routerId} ORDER BY station_seq ASC")
+    List<RouterStation> selectByRouterId(@Param("routerId") Long routerId);
     
     /**
-     * 删除指定路线的所有站点关联
+     * 删除指定路线的所有站点
+     * @param routerId 路线ID
+     * @return 删除的记录数
      */
-    int deleteByRouterId(@Param("routerId") Integer routerId);
-
-    @Select("SELECT MAX(router_id) FROM router_station")
-    Integer selectMaxRouterId();
+    int deleteByRouterId(@Param("routerId") Long routerId);
 }

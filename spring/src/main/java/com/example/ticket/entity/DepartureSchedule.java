@@ -8,7 +8,8 @@ import java.time.LocalDateTime;
 
 /**
  * 车次发车时间表
- * 存储每个列车的具体发车时间(年月日时)和运行方向
+ * 存储每个列车的具体发车时间(年月日时分)
+ * 注意：direction字段已废弃，往返通过route_id的最后一位判断
  */
 @Data
 @NoArgsConstructor
@@ -41,8 +42,9 @@ public class DepartureSchedule {
     private LocalDateTime departureTime;
 
     /**
-     * 运行方向: 0-顺行(正序), 1-逆行(逆序)
+     * 路线ID（关联router表）
+     * 通过route_id的最后一位判断方向：0=往程，1=返程
      */
-    @TableField("direction")
-    private Integer direction;
+    @TableField("router_id")
+    private Long routerId;
 }

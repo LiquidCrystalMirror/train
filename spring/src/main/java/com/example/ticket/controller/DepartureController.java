@@ -65,9 +65,9 @@ public class DepartureController {
     public ApiResult<Void> createSchedule(@RequestBody Map<String, Object> params) {
         Integer trainId = (Integer) params.get("trainId");
         String departureTimeStr = (String) params.get("departureTime");
-        Integer direction = (Integer) params.get("direction");
+        Long routerId = params.get("routerId") != null ? ((Number) params.get("routerId")).longValue() : null;
         
-        if (trainId == null || departureTimeStr == null || direction == null) {
+        if (trainId == null || departureTimeStr == null) {
             return ApiResult.error(400, "参数不完整");
         }
         
@@ -88,7 +88,7 @@ public class DepartureController {
         schedule.setTrainId(trainId);
         schedule.setTrainName(train.getTrainNumber());
         schedule.setDepartureTime(departureTime);
-        schedule.setDirection(direction);
+        schedule.setRouterId(routerId);
         
         boolean result = departureScheduleService.createSchedule(schedule);
         return result ? ApiResult.success("创建成功") : ApiResult.error(400, "创建失败");
