@@ -23,9 +23,9 @@ public class MyWebConfig implements WebMvcConfigurer {
         registry.addResourceHandler("/static/imgs/**")
                 .addResourceLocations("file:D:/test-imgs/xw_imgs/");
         
-        // 忽略 favicon.ico 等静态资源请求
-        registry.addResourceHandler("/favicon.ico")
-                .addResourceLocations("classpath:/static/");
+        // favicon.ico 由 StaticResourceController 统一处理
+        // 不要在此处配置 /favicon.ico 的资源映射，否则 ResourceHttpRequestHandler
+        // 会优先拦截请求并在找不到实体文件时抛出 NoResourceFoundException
     }
 
     @Override
