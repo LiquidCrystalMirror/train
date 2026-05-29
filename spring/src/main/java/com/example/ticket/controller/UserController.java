@@ -198,7 +198,7 @@ public class UserController {
     // ===================== 管理员删除用户 =====================
     @RoleInterceptor.RequireRole("admin")
     @DeleteMapping("/admin/user/{id}")
-    public ApiResult<Void> delete(@PathVariable Integer id) {
+    public ApiResult<Void> delete(@PathVariable String id) {
         userService.removeById(id);
         return ApiResult.success("删除成功");
     }

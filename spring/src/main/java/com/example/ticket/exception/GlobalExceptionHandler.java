@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import java.time.format.DateTimeParseException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -80,6 +81,14 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ApiResult<?> handleBusinessException(BusinessException e) {
         return ApiResult.error(e.getCode(), e.getMessage());
+    }
+
+    /**
+     * 处理日期时间解析异常
+     */
+    @ExceptionHandler(DateTimeParseException.class)
+    public ApiResult<?> handleDateTimeParseException(DateTimeParseException e) {
+        return ApiResult.error(400, "日期时间格式错误：" + e.getParsedString() + "，请使用 ISO-8601 格式（如 2025-06-01T10:00:00）");
     }
 
     /**

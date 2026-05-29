@@ -1,17 +1,17 @@
 /*
- Navicat Premium Dump SQL
+ Navicat MySQL Dump SQL
 
- Source Server         : horse1
+ Source Server         : l1
  Source Server Type    : MySQL
  Source Server Version : 80044 (8.0.44)
  Source Host           : localhost:3306
- Source Schema         : sqlprogram3
+ Source Schema         : sqlprogram
 
  Target Server Type    : MySQL
  Target Server Version : 80044 (8.0.44)
  File Encoding         : 65001
 
- Date: 28/05/2026 23:14:56
+ Date: 29/05/2026 15:30:19
 */
 
 SET NAMES utf8mb4;
@@ -25,7 +25,7 @@ CREATE TABLE `carriage_info`  (
   `id` int NOT NULL AUTO_INCREMENT,
   `carriage_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
   `seat_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
-  `seat_type` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+  `seat_type` bigint NULL DEFAULT NULL,
   PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
@@ -47,9 +47,9 @@ CREATE TABLE `departure_schedule`  (
 DROP TABLE IF EXISTS `price_schedule`;
 CREATE TABLE `price_schedule`  (
   `train_id` int NOT NULL,
-  `station_count` int NULL DEFAULT NULL,
+  `station_count` int NOT NULL,
   `price` double NULL DEFAULT NULL,
-  PRIMARY KEY (`train_id`) USING BTREE
+  PRIMARY KEY (`train_id`, `station_count`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
@@ -88,7 +88,7 @@ CREATE TABLE `router`  (
   `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`router_id`) USING BTREE,
   INDEX `router_name`(`router_name` ASC) USING BTREE
-) ENGINE = InnoDB AUTO_INCREMENT = 7 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '路线基本信息表' ROW_FORMAT = DYNAMIC;
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '路线基本信息表' ROW_FORMAT = DYNAMIC;
 
 -- ----------------------------
 -- Table structure for router_station
@@ -173,7 +173,7 @@ CREATE TABLE `ticket_info`  (
   `train_id` int NOT NULL COMMENT '关联车次ID(外键)',
   `carriage_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '车厢号(如1车、二等座01车)',
   `seat_number` varchar(10) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '座位号(如A1、05号)',
-  `seat_type` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '座位类型(硬座/软座/二等座等)',
+  `seat_type` bigint NULL DEFAULT NULL COMMENT '座位类型(硬座/软座/二等座等)',
   `ticket_status` enum('可售','已售','锁定') CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT '可售' COMMENT '车票状态',
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `departure_time` datetime NULL DEFAULT NULL,
@@ -183,6 +183,24 @@ CREATE TABLE `ticket_info`  (
   INDEX `idx_ticket_status`(`ticket_status` ASC) USING BTREE,
   CONSTRAINT `ticket_info_ibfk_1` FOREIGN KEY (`train_id`) REFERENCES `train_info` (`train_id`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE = InnoDB AUTO_INCREMENT = 39 CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车票信息表' ROW_FORMAT = DYNAMIC;
+
+-- ----------------------------
+-- Table structure for ticket_inventory
+-- ----------------------------
+DROP TABLE IF EXISTS `ticket_inventory`;
+CREATE TABLE `ticket_inventory`  (
+  `id` bigint NOT NULL AUTO_INCREMENT COMMENT '代理主键',
+  `train_id` int NOT NULL COMMENT '车次ID',
+  `departure_time` datetime NOT NULL COMMENT '发车时间',
+  `seat_type` bigint NOT NULL COMMENT '座位类型(0/1/2)',
+  `total_count` int NOT NULL DEFAULT 0 COMMENT '总票数',
+  `sold_count` int NOT NULL DEFAULT 0 COMMENT '已售数量',
+  `remaining_count` int NOT NULL DEFAULT 0 COMMENT '剩余数量',
+  `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`) USING BTREE,
+  UNIQUE INDEX `uk_train_departure_type`(`train_id` ASC, `departure_time` ASC, `seat_type` ASC) USING BTREE
+) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci COMMENT = '车次座位库存表（防超卖）' ROW_FORMAT = Dynamic;
 
 -- ----------------------------
 -- Table structure for train_info

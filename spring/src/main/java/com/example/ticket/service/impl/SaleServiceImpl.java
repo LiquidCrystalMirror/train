@@ -1,13 +1,17 @@
 package com.example.ticket.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.example.ticket.entity.PriceSchedule;
 import com.example.ticket.entity.SaleInfo;
 import com.example.ticket.entity.TicketInfo;
+import com.example.ticket.entity.TicketInventory;
+import com.example.ticket.enums.SeatTypeEnum;
 import com.example.ticket.exception.BusinessException;
 import com.example.ticket.mapper.PriceScheduleMapper;
 import com.example.ticket.mapper.SaleInfoMapper;
 import com.example.ticket.mapper.TicketInfoMapper;
+import com.example.ticket.mapper.TicketInventoryMapper;
 import com.example.ticket.service.PriceScheduleService;
 import com.example.ticket.service.SaleService;
 import org.springframework.stereotype.Service;
@@ -21,7 +25,10 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
     
     @Resource
     private TicketInfoMapper ticketInfoMapper;
-    
+
+    @Resource
+    private TicketInventoryMapper inventoryMapper;
+
     @Resource
     private PriceScheduleService priceScheduleService;
     
@@ -31,57 +38,99 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Integer sellTicket(SaleInfo saleInfo, String userId) {
-        // 1. 验证必填字段
-        if (saleInfo.getTicketId() == null) {
-            throw new BusinessException("车票ID不能为空");
-        }
-        if (saleInfo.getTrainId() == null) {
-            throw new BusinessException("车次ID不能为空");
-        }
+        // 1. 参数校验
+        if (saleInfo.getTicketId() == null) throw new BusinessException("车票ID不能为空");
         if (saleInfo.getStartStationSeq() == null || saleInfo.getEndStationSeq() == null) {
-            throw new BusinessException("上车站点序号和下车站点序号不能为空");
+            throw new BusinessException("上下车站点序号不能为空");
         }
-        
-        // 2. 验证站点序号合法性
         if (saleInfo.getStartStationSeq() >= saleInfo.getEndStationSeq()) {
             throw new BusinessException("上车站点序号必须小于下车站点序号");
         }
-        
-        // 3. 查询车票信息，验证车票状态
+
+        // 2. 查询车票信息
         TicketInfo ticket = ticketInfoMapper.selectById(saleInfo.getTicketId());
-        if (ticket == null) {
-            throw new BusinessException(404, "车票不存在");
-        }
+        if (ticket == null) throw new BusinessException(404, "车票不存在");
         if (!"可售".equals(ticket.getTicketStatus())) {
             throw new BusinessException("车票状态不可售，当前状态：" + ticket.getTicketStatus());
         }
-        
-        // 4. 计算票价
+
+        // 3. 查询库存记录（用于乐观锁版本号）
+        TicketInventory inv = inventoryMapper.selectOne(
+                new LambdaQueryWrapper<TicketInventory>()
+                        .eq(TicketInventory::getTrainId, ticket.getTrainId())
+                        .eq(TicketInventory::getDepartureTime, ticket.getDepartureTime())
+                        .eq(TicketInventory::getSeatType, ticket.getSeatType())
+        );
+        if (inv == null || inv.getRemainingCount() <= 0) {
+            throw new BusinessException("库存不足或未初始化");
+        }
+
+        // 4. 乐观锁扣减库存（使用剩余数量作为乐观锁条件）
+        int rows = inventoryMapper.deductStock(
+                ticket.getTrainId(),
+                ticket.getDepartureTime(),
+                ticket.getSeatType(),
+                inv.getRemainingCount()
+        );
+        if (rows == 0) {
+            throw new BusinessException("购票失败，库存已被扣减，请重试");
+        }
+
+        // 5. 计算票价
         int stationCount = saleInfo.getEndStationSeq() - saleInfo.getStartStationSeq() + 1;
-        Double price = priceScheduleService.getPriceByTrainAndStations(saleInfo.getTrainId(), stationCount);
-        if (price == null) {
+        Double basePrice = priceScheduleService.getPrice(saleInfo.getTrainId(), stationCount);
+        if (basePrice == null) {
             throw new BusinessException("未找到该列车的价格策略，站点数：" + stationCount);
         }
-        saleInfo.setPrice(price);
         
-        // 5. 设置用户ID和时间
+        // 根据座位类型应用价格系数
+        SeatTypeEnum seatType = SeatTypeEnum.fromCode(ticket.getSeatType());
+        if (seatType == null) {
+            throw new BusinessException("未知的座位类型：" + ticket.getSeatType());
+        }
+        double finalPrice = basePrice * seatType.getPriceMultiplier();
+        saleInfo.setPrice(finalPrice);
         saleInfo.setUserId(userId);
         saleInfo.setSaleTime(LocalDateTime.now());
         saleInfo.setSaleStatus("已出票");
         saleInfo.setCreateTime(LocalDateTime.now());
-        
-        // 6. 保存售票记录
-        boolean save = this.save(saleInfo);
-        if (!save) {
-            throw new BusinessException("售票失败");
-        }
-        
-        // 7. 售票成功后，把车票状态改为已售
+
+        // 6. 保存销售记录
+        boolean saved = this.save(saleInfo);
+        if (!saved) throw new BusinessException("售票失败");
+
+        // 7. 更新车票状态为“已售”
         int updateResult = ticketInfoMapper.updateTicketStatus(saleInfo.getTicketId(), "已售");
-        if (updateResult <= 0) {
-            throw new BusinessException("更新车票状态失败");
-        }
-        
+        if (updateResult <= 0) throw new BusinessException("更新车票状态失败");
+
         return saleInfo.getSaleId();
+    }
+
+    @Override
+    public Double calculatePrice(Integer trainId, Integer ticketId, Integer startStationSeq, Integer endStationSeq) {
+        if (trainId == null || ticketId == null || startStationSeq == null || endStationSeq == null) {
+            throw new BusinessException("参数不能为空");
+        }
+        if (startStationSeq >= endStationSeq) {
+            throw new BusinessException("上车站点序号必须小于下车站点序号");
+        }
+
+        TicketInfo ticket = ticketInfoMapper.selectById(ticketId);
+        if (ticket == null) {
+            throw new BusinessException("车票不存在");
+        }
+
+        int stationCount = endStationSeq - startStationSeq + 1;
+        Double basePrice = priceScheduleService.getPrice(trainId, stationCount);
+        if (basePrice == null) {
+            throw new BusinessException("未找到该列车的价格策略，站点数：" + stationCount);
+        }
+
+        SeatTypeEnum seatType = SeatTypeEnum.fromCode(ticket.getSeatType());
+        if (seatType == null) {
+            throw new BusinessException("未知的座位类型：" + ticket.getSeatType());
+        }
+
+        return basePrice * seatType.getPriceMultiplier();
     }
 }

@@ -11,6 +11,9 @@ import com.example.ticket.mapper.DepartureScheduleMapper;
 import com.example.ticket.mapper.RouterMapper;
 import com.example.ticket.mapper.TrainScheduleWatermarkMapper;
 import com.example.ticket.service.DepartureScheduleService;
+import com.example.ticket.service.PriceScheduleService;
+import com.example.ticket.service.RouterStationService;
+import com.example.ticket.service.TicketService;
 import com.example.ticket.service.TrainService;
 import com.example.ticket.util.DepartureTimeValidator;
 import com.example.ticket.vo.TrainScheduleQueryVO;
@@ -31,6 +34,9 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
         implements DepartureScheduleService {
 
     @Resource
+    private PriceScheduleService priceScheduleService;
+
+    @Resource
     private TrainService trainService;
     
     @Resource
@@ -38,6 +44,12 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
     
     @Resource
     private TrainScheduleWatermarkMapper watermarkMapper;
+
+    @Resource
+    private RouterStationService routerStationService;
+
+    @Resource
+    private TicketService ticketService;
 
     @Override
     public List<DepartureSchedule> getSchedulesByTrainId(Integer trainId) {
@@ -68,7 +80,7 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
                 result.put("message", "列车不存在");
                 return result;
             }
-            
+
             // 2. 验证路线ID是否有效
             if (routerId == null) {
                 result.put("success", false);
@@ -83,23 +95,38 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
                 result.put("message", "路线不存在");
                 return result;
             }
-            
-            // 4. 查询水位表获取最后一次记录
-            String trainNumber = train.getTrainNumber();
-            TrainScheduleWatermark lastWatermark = watermarkMapper.selectLatestByTrainId(trainNumber);
-            
-            // 5. 确定基准时间
-            LocalDateTime baseTime = DepartureTimeValidator.getBaseTime(lastWatermark);
-            
-            // 6. 验证发车时间是否在基准时间往后24小时内
-            if (!DepartureTimeValidator.isValidDepartureTime(departureTime, baseTime)) {
+
+            // 3.1 获取路线的总站点数
+            List<com.example.ticket.entity.RouterStation> stations = routerStationService.getStationsByRouterId(routerId);
+            if (stations == null || stations.isEmpty()) {
                 result.put("success", false);
-                result.put("message", DepartureTimeValidator.buildErrorMessage(
-                    DepartureTimeValidator.ErrorType.TIME_OUT_OF_RANGE, baseTime));
+                result.put("message", "该路线没有配置站点");
+                return result;
+            }
+            int totalStations = stations.size();
+
+            // 3.2 价格梯度完整性校验
+            boolean priceComplete = priceScheduleService.isComplete(trainId, totalStations);
+            if (!priceComplete) {
+                result.put("success", false);
+                result.put("message", String.format(
+                        "价格梯度不完整，当前车次需配置 1~%d 站的价格才能发布班次", totalStations));
+                return result;
+            }
+
+
+            // 4. 查询水位表获取最后一次记录
+            TrainScheduleWatermark lastWatermark = watermarkMapper.selectLatestByTrainId(String.valueOf(trainId));
+
+            // 5. 验证发车时间是否在基准时间往后24小时内（此方法内部同时检查 >= 基准时间 和 <= 基准时间+24h）
+            if (!DepartureTimeValidator.isValidDepartureTime(departureTime, lastWatermark)) {
+                LocalDateTime baseTime = DepartureTimeValidator.getBaseTime(lastWatermark);
+                result.put("success", false);
+                result.put("message", "发车时间必须在基准时间（" + baseTime + "）往后24小时内");
                 return result;
             }
             
-            // 7. 验证方向交替规则
+            // 8. 验证方向交替规则
             if (lastWatermark != null && lastWatermark.getRouteId() != null) {
                 if (!DepartureTimeValidator.isAlternatingDirection(
                         lastWatermark.getRouteId(), routerId)) {
@@ -123,7 +150,7 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
             // 11. 创建发车计划
             DepartureSchedule schedule = new DepartureSchedule();
             schedule.setTrainId(trainId);
-            schedule.setTrainNumber(trainNumber);
+            schedule.setTrainNumber(train.getTrainNumber());
             schedule.setDepartureTime(departureTime);
             schedule.setRouterId(routerId);
             
@@ -136,10 +163,10 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
             
             // 12. 更新水位表（存储到达时间）
             // 先删除旧记录，再插入新记录（确保只有一条）
-            watermarkMapper.deleteByTrainId(trainNumber);
+            watermarkMapper.deleteByTrainId(String.valueOf(trainId));
             
             TrainScheduleWatermark watermark = new TrainScheduleWatermark();
-            watermark.setTrainId(trainNumber);
+            watermark.setTrainId(String.valueOf(trainId));
             watermark.setRouteId(routerId);
             watermark.setDepartTime(departureTime);
             watermark.setArriveTime(arriveTime);
@@ -147,6 +174,9 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
             watermark.setUpdatedBy(null);
             
             watermarkMapper.insert(watermark);
+            
+            // 13. 自动生成车票并初始化库存（基于车厢模板）
+            ticketService.generateTicketsWithoutWatermarkCheck(trainId, departureTime);
             
             result.put("success", true);
             result.put("message", "创建成功");
@@ -162,6 +192,7 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
         return result;
     }
 
+
     @Override
     public Page<TrainScheduleQueryVO> querySchedulesByStations(Integer startStationId, Integer endStationId,
                                                                LocalDateTime startTime, Integer pageNum, Integer pageSize) {
@@ -173,5 +204,4 @@ public class DepartureScheduleServiceImpl extends ServiceImpl<DepartureScheduleM
         Page<TrainScheduleQueryVO> page = new Page<>(pageNum, pageSize);
         return baseMapper.selectSchedulesByStartEndStationAndTime(page, startStationId, endStationId, startTime);
     }
-
 }

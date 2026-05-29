@@ -32,7 +32,7 @@ public class TicketInfo {
     /**
      * 座位类型(硬座/软座/二等座等)
      */
-    private String seatType;
+    private Long seatType;
     
     /**
      * 车票状态(可售/已售/锁定)

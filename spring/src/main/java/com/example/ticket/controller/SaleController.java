@@ -8,6 +8,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
@@ -30,5 +31,17 @@ public class SaleController {
         Integer saleId = saleService.sellTicket(saleInfo, login.getUserId());
         
         return ApiResult.success("售票成功", saleId);
+    }
+
+    /**
+     * 计算票价接口
+     */
+    @PostMapping("/calculate-price")
+    public ApiResult<Double> calculatePrice(@RequestParam Integer trainId,
+                                            @RequestParam Integer ticketId,
+                                            @RequestParam Integer startStationSeq,
+                                            @RequestParam Integer endStationSeq) {
+        Double price = saleService.calculatePrice(trainId, ticketId, startStationSeq, endStationSeq);
+        return ApiResult.success("计算成功", price);
     }
 }

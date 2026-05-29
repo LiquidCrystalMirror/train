@@ -127,12 +127,12 @@ public class StatsController {
         
         // 可售票数
         long availableCount = ticketInfoMapper.selectCount(Wrappers.<TicketInfo>lambdaQuery()
-                .eq(TicketInfo::getTicketStatus, "available"));
+                .eq(TicketInfo::getTicketStatus, "可售"));
         stats.put("availableCount", availableCount);
         
         // 已售票数
         long soldCount = ticketInfoMapper.selectCount(Wrappers.<TicketInfo>lambdaQuery()
-                .eq(TicketInfo::getTicketStatus, "sold"));
+                .eq(TicketInfo::getTicketStatus, "已售"));
         stats.put("soldCount", soldCount);
         
         return ApiResult.success("查询成功", stats);

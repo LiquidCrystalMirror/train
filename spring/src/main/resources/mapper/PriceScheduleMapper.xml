@@ -2,12 +2,14 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.example.ticket.mapper.PriceScheduleMapper">
 
-    <!-- 根据列车ID和站点数量查询价格 -->
-    <select id="selectPriceByTrainAndStations" resultType="java.lang.Double">
-        SELECT price FROM price_schedule
-        WHERE train_id = #{trainId}
-        AND station_count = #{stationCount}
-        LIMIT 1
-    </select>
+
+    <insert id="batchInsertOrUpdate" parameterType="list">
+        INSERT INTO price_schedule (train_id, station_count, price)
+        VALUES
+        <foreach collection="list" item="item" separator=",">
+            (#{item.trainId}, #{item.stationCount}, #{item.price})
+        </foreach>
+        ON DUPLICATE KEY UPDATE price = VALUES(price)
+    </insert>
 
 </mapper>
