@@ -124,8 +124,7 @@ export function checkPriceComplete(trainId, totalStationCount) {
 }
 
 // 计算票价（修正：实际在SaleController中）
+// 计算票价 - POST 请求，参数放在 URL 查询字符串中
 export function calculatePrice(trainId, ticketId, startStationSeq, endStationSeq) {
-    return post('/api/v1/sale/calculate-price', null, {
-        params: { trainId, ticketId, startStationSeq, endStationSeq }
-    })
+    return post(`/api/v1/sale/calculate-price?trainId=${trainId}&ticketId=${ticketId}&startStationSeq=${startStationSeq}&endStationSeq=${endStationSeq}`, null)
 }

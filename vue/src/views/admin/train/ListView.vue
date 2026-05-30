@@ -71,7 +71,6 @@
     </div>
 
     <!-- 分页 -->
-    <!-- 分页 -->
     <el-pagination
         class="mgt-4"
         v-model:current-page="searchForm.pageNum"
@@ -122,7 +121,7 @@
           <el-descriptions-item label="总站点数" :span="2">
             <el-tag type="info">{{ totalStationsCount }} 站</el-tag>
             <span class="tip-text" style="margin-left: 12px; color: #909399; font-size: 12px">
-              提示：共需配置 {{ totalStationsCount - 1 }} 个区间价格，全程价格将自动计算并一起保存
+              提示：区间站数包含起始站
             </span>
           </el-descriptions-item>
         </el-descriptions>
@@ -184,6 +183,9 @@ import * as TrainApi from '@/api/TrainApi.js'
 import { getRouteList, getRouteDetail } from '@/api/RouteApi.js'
 import { getPriceList, setPrice, batchSetPrices } from '@/api/ExtraApi.js'
 
+// 基础价格（第1站固定价格）
+const BASE_PRICE = 50
+
 const searchForm = ref({
   find: '',
   pageNum: 1,
@@ -207,8 +209,8 @@ let formRef = ref(null)
 const priceDialogVisible = ref(false)
 const priceDialogTitle = ref('价格梯度配置')
 const currentTrain = ref({})
-const priceList = ref([]) // 存储所有价格（包括隐藏的全程价格）
-const displayPriceList = ref([]) // 显示给用户的价格列表（不含全程价格）
+const priceList = ref([]) // 存储所有价格（包括第1站）
+const displayPriceList = ref([]) // 显示给用户的价格列表（从2站开始到总站数）
 const batchSaving = ref(false)
 
 // 表单验证规则
@@ -341,7 +343,6 @@ const loadRouteDetail = async (routerId) => {
 const loadPriceList = async (trainId, routerId) => {
   try {
     const res = await getPriceList(trainId)
-    // 获取路线详情以知道总站数
     const routeDetail = await loadRouteDetail(routerId)
     const totalStations = routeDetail?.stations?.length || 0
 
@@ -357,13 +358,13 @@ const loadPriceList = async (trainId, routerId) => {
     for (let i = 1; i <= totalStations; i++) {
       fullPriceList.push({
         stationCount: i,
-        price: priceMap.has(i) ? priceMap.get(i) : null,
+        price: priceMap.has(i) ? priceMap.get(i) : (i === 1 ? BASE_PRICE : null),
         saving: false
       })
     }
 
-    // 显示给用户的列表（不包含全程价格）
-    const displayList = fullPriceList.slice(0, -1).map(item => ({
+    // 显示给用户的列表（从2站开始到总站数，不包含第1站）
+    const displayList = fullPriceList.slice(1).map(item => ({
       ...item,
       saving: false
     }))
@@ -381,7 +382,6 @@ const handlePriceConfig = async (row) => {
   priceDialogTitle.value = `价格梯度配置 - ${row.trainNumber} (${getBaseRouteName(row.routerName)})`
   priceDialogVisible.value = true
 
-  // 加载价格数据
   const { fullPriceList, displayList } = await loadPriceList(row.trainId, row.routerId)
   priceList.value = fullPriceList
   displayPriceList.value = displayList
@@ -391,7 +391,7 @@ const handlePriceConfig = async (row) => {
   }
 }
 
-// 保存单个价格梯度（同时保存全程价格）
+// 保存单个价格梯度
 const saveSinglePrice = async (priceItem) => {
   if (priceItem.price === null || priceItem.price === undefined) {
     ElMessage.warning('请输入价格')
@@ -400,52 +400,30 @@ const saveSinglePrice = async (priceItem) => {
 
   priceItem.saving = true
   try {
-    // 准备要保存的所有价格数据
+    // 准备要保存的所有价格数据（包括第1站）
     const allPriceData = []
 
-    // 1. 先更新当前修改的价格
+    // 1. 添加第1站基础价格
     allPriceData.push({
-      stationCount: priceItem.stationCount,
-      price: priceItem.price
+      stationCount: 1,
+      price: BASE_PRICE
     })
 
-    // 2. 重新计算并准备全程价格
-    const lastStationCount = totalStationsCount.value
-    let fullPrice = null
-
-    // 获取倒数第二站的价格（用于计算全程价格）
-    const secondLastPrice = displayPriceList.value.find(p => p.stationCount === lastStationCount - 1)?.price
-
-    if (secondLastPrice !== null && secondLastPrice !== undefined) {
-      fullPrice = secondLastPrice + 50
+    // 2. 添加所有显示的价格（从2站到总站数）
+    displayPriceList.value.forEach(item => {
       allPriceData.push({
-        stationCount: lastStationCount,
-        price: fullPrice
+        stationCount: item.stationCount,
+        price: item.price
       })
-    } else {
-      // 如果倒数第二站价格不存在，尝试从priceList中获取
-      const existingFullPrice = priceList.value.find(p => p.stationCount === lastStationCount)?.price
-      if (existingFullPrice) {
-        allPriceData.push({
-          stationCount: lastStationCount,
-          price: existingFullPrice
-        })
-      }
-    }
+    })
 
     console.log('保存单个价格时的所有数据:', allPriceData)
 
-    // 批量保存（包括当前修改的价格和全程价格）
     const res = await batchSetPrices(currentTrain.value.trainId, allPriceData)
 
     if (res.code === 200) {
       // 更新本地价格列表
-      allPriceData.forEach(data => {
-        const index = priceList.value.findIndex(p => p.stationCount === data.stationCount)
-        if (index !== -1) {
-          priceList.value[index].price = data.price
-        }
-      })
+      priceList.value = allPriceData
 
       // 更新显示列表
       const displayItem = displayPriceList.value.find(p => p.stationCount === priceItem.stationCount)
@@ -453,8 +431,7 @@ const saveSinglePrice = async (priceItem) => {
         displayItem.price = priceItem.price
       }
 
-      const fullPriceMsg = fullPrice ? `，全程价格已更新为 ${fullPrice}元` : ''
-      ElMessage.success(`保存成功：${priceItem.stationCount}站价格 ${priceItem.price}元${fullPriceMsg}`)
+      ElMessage.success(`保存成功：${priceItem.stationCount}站价格 ${priceItem.price}元`)
     } else {
       ElMessage.error(res.message || '保存失败')
     }
@@ -466,19 +443,24 @@ const saveSinglePrice = async (priceItem) => {
   }
 }
 
-// 批量保存所有价格（包括全程价格）
+// 批量保存所有价格
 const batchSavePrices = async () => {
-  // 验证所有显示的价格都已填写
   const invalidItems = displayPriceList.value.filter(item => item.price === null || item.price === undefined)
   if (invalidItems.length > 0) {
     ElMessage.warning(`请先填写所有价格梯度（共${invalidItems.length}项未填写）`)
     return
   }
 
-  // 准备批量保存数据（包含所有区间价格 + 全程价格）
+  // 准备所有价格数据（包括第1站）
   const allPriceData = []
 
-  // 添加区间价格（1站 到 总站数-1）
+  // 1. 第1站基础价格
+  allPriceData.push({
+    stationCount: 1,
+    price: BASE_PRICE
+  })
+
+  // 2. 所有显示的价格（从2站到总站数）
   displayPriceList.value.forEach(item => {
     allPriceData.push({
       stationCount: item.stationCount,
@@ -486,46 +468,14 @@ const batchSavePrices = async () => {
     })
   })
 
-  // 计算并添加全程价格（最后一站 = 前一站价格 + 50）
-  const lastStationCount = totalStationsCount.value
-  const lastPrice = displayPriceList.value[displayPriceList.value.length - 1]?.price || 0
-  const fullPrice = lastPrice + 50
-
-  allPriceData.push({
-    stationCount: lastStationCount,
-    price: fullPrice
-  })
-
   console.log('批量保存的所有价格数据:', allPriceData)
 
   batchSaving.value = true
   try {
-    // 一次性批量保存所有价格（包括全程价格）
     const res = await batchSetPrices(currentTrain.value.trainId, allPriceData)
     if (res.code === 200) {
-      // 更新本地价格列表
-      allPriceData.forEach(priceItem => {
-        const index = priceList.value.findIndex(p => p.stationCount === priceItem.stationCount)
-        if (index !== -1) {
-          priceList.value[index].price = priceItem.price
-        } else {
-          priceList.value.push({
-            stationCount: priceItem.stationCount,
-            price: priceItem.price,
-            saving: false
-          })
-        }
-      })
-
-      // 更新显示列表的price值
-      displayPriceList.value.forEach(item => {
-        const savedItem = allPriceData.find(p => p.stationCount === item.stationCount)
-        if (savedItem) {
-          item.price = savedItem.price
-        }
-      })
-
-      ElMessage.success(`批量保存成功！共保存 ${allPriceData.length} 个价格梯度（全程价格: ${fullPrice}元）`)
+      priceList.value = allPriceData
+      ElMessage.success(`批量保存成功！共保存 ${allPriceData.length} 个价格梯度`)
     } else {
       ElMessage.error(res.message || '批量保存失败')
     }
@@ -545,9 +495,7 @@ const resetPriceForm = () => {
 }
 
 // 重置新增/编辑表单
-const resetForm = () => {
-  // 清空表单相关状态
-}
+const resetForm = () => {}
 
 // 加载车次数据
 const loadData = async () => {
@@ -560,7 +508,6 @@ const loadData = async () => {
     })
     if (res.code === 200 && res.data) {
       rawData.value = res.data.records || []
-      console.log('加载的车次数据:', rawData.value)
     }
   } catch (err) {
     console.error('加载数据失败:', err)
@@ -602,7 +549,6 @@ const onRouteChange = async (routerId) => {
 const handleEdit = (row) => {
   dialogTitle.value = '编辑车次'
   dialogVisible.value = true
-
   form.value = {
     trainId: row.trainId,
     trainNumber: row.trainNumber,
@@ -633,7 +579,6 @@ const handleSave = () => {
           ElMessage.error(res.message || '保存失败')
         }
       } else {
-        // 新增车次
         res = await TrainApi.addTrain({
           trainNumber: form.value.trainNumber,
           routerId: form.value.routerId
@@ -641,18 +586,20 @@ const handleSave = () => {
 
         if (res.code === 200) {
           const newTrainId = res.data?.trainId || res.data
-
-          // 获取路线详情
           const routeDetail = await loadRouteDetail(form.value.routerId)
           const totalStations = routeDetail?.stations?.length || 0
 
           if (totalStations > 1) {
-            // 准备所有价格梯度数据（1站 到 总站数）
             const allPriceData = []
 
-            // 生成区间价格（1站到总站数-1）
-            for (let i = 1; i < totalStations; i++) {
-              // 默认价格：基础价格50元，每站增加30元
+            // 第1站基础价格
+            allPriceData.push({
+              stationCount: 1,
+              price: BASE_PRICE
+            })
+
+            // 生成区间价格（2站到总站数）
+            for (let i = 2; i <= totalStations; i++) {
               const defaultPrice = i * 30 + 20
               allPriceData.push({
                 stationCount: i,
@@ -660,20 +607,9 @@ const handleSave = () => {
               })
             }
 
-            // 计算并添加全程价格（最后一站 = 前一站价格 + 50）
-            const lastPrice = allPriceData[allPriceData.length - 1]?.price || 0
-            const fullPrice = lastPrice + 50
-            allPriceData.push({
-              stationCount: totalStations,
-              price: fullPrice
-            })
-
-            console.log('初始化所有价格数据:', allPriceData)
-
-            // 一次性批量保存所有价格梯度
             try {
               await batchSetPrices(newTrainId, allPriceData)
-              ElMessage.success(`车次创建成功，已初始化 ${allPriceData.length} 个价格梯度（全程价格: ${fullPrice}元）`)
+              ElMessage.success(`车次创建成功，已初始化 ${allPriceData.length} 个价格梯度`)
             } catch (priceError) {
               console.error('价格梯度初始化失败:', priceError)
               ElMessage.warning('车次创建成功，但价格梯度初始化失败，请手动配置')
@@ -698,7 +634,6 @@ const handleSave = () => {
 
 // 删除
 const handleDelete = (trainId) => {
-  console.log('删除车次ID:', trainId)
   TrainApi.deleteTrain(trainId).then(() => {
     ElMessage.success('删除成功')
     loadData()
@@ -763,7 +698,6 @@ onMounted(() => {
   overflow-y: auto;
 }
 
-/* 操作栏按钮并排显示 */
 .action-buttons-cell {
   display: flex;
   gap: 8px;

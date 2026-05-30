@@ -47,11 +47,6 @@
             {{ getSeatTypeName(scope.row.seatType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="价格(元)" align="center">
-          <template #default="scope">
-            ¥{{ formatPrice(scope.row.price) }}
-          </template>
-        </el-table-column>
         <el-table-column prop="ticketStatus" label="状态" align="center">
           <template #default="scope">
             <el-tag :type="getTicketStatusType(scope.row.ticketStatus)" size="small">
@@ -94,7 +89,7 @@ const searchForm = ref({
 
 const pagination = ref({
   pageNum: 1,
-  pageSize: 10  // 固定每页10条
+  pageSize: 10
 })
 
 const tableData = ref([])
@@ -104,19 +99,9 @@ const isSearchByTrainId = ref(false)
 
 // 座位类型映射
 const seatTypeMap = {
-  1: '商务座',
+  3: '商务座',
   2: '一等座',
-  3: '二等座',
-  4: '硬座',
-  5: '软座',
-  6: '硬卧',
-  7: '软卧'
-}
-
-// 格式化价格
-const formatPrice = (price) => {
-  if (price === null || price === undefined) return '0.00'
-  return Number(price).toFixed(2)
+  1: '二等座',
 }
 
 // 状态标签类型
@@ -176,7 +161,7 @@ const loadTicketsByTrainId = (trainId) => {
   })
 }
 
-// 查询（根据是否有车次ID决定调用哪个接口）
+// 查询
 const handleSearch = () => {
   if (searchForm.value.trainId) {
     isSearchByTrainId.value = true

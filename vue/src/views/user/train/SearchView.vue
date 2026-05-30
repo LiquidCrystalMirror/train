@@ -148,32 +148,47 @@
     </el-card>
 
     <!-- 余票库存对话框 -->
-    <el-dialog :title="`${currentTrainNumber} - 余票信息`" v-model="ticketDialogVisible" width="700px">
-      <div style="margin-bottom: 12px; color: #909399;">
-        发车时间：{{ currentDepartureTimeStr }}
-        &nbsp;|&nbsp; {{ getStartStationDisplay() }} → {{ getEndStationDisplay() }}
+    <el-dialog :title="`${currentTrainNumber} - 余票信息`" v-model="ticketDialogVisible" width="750px" @close="resetInventory">
+      <div style="margin-bottom: 16px; color: #606266; font-size: 14px; padding: 8px 12px; background: #f5f7fa; border-radius: 6px;">
+        📅 发车时间：{{ currentDepartureTimeStr }}
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        🚉 {{ getStartStationDisplay() }} → {{ getEndStationDisplay() }}
       </div>
-      <el-table :data="inventoryList" stripe border style="width: 100%" v-loading="ticketLoading">
-        <el-table-column prop="seatType" label="座位类型" width="120">
+
+      <el-table
+          :data="inventoryList"
+          stripe
+          border
+          style="width: 100%"
+          v-loading="ticketLoading"
+      >
+        <el-table-column prop="seatType" label="座位类型" align="center">
           <template #default="scope">
             {{ getSeatTypeText(scope.row.seatType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="totalCount" label="总票数" width="100" />
-        <el-table-column prop="soldCount" label="已售" width="100" />
-        <el-table-column prop="remainingCount" label="剩余" width="100">
+        <el-table-column prop="price" label="票价" align="center" width="120">
           <template #default="scope">
-            <el-tag :type="scope.row.remainingCount > 0 ? 'success' : 'danger'">
+            <span style="color: #e6a23c; font-weight: bold; font-size: 16px;">
+              ¥{{ formatPrice(scope.row.price) }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="totalCount" label="总票数" align="center" width="100" />
+        <el-table-column prop="soldCount" label="已售" align="center" width="100" />
+        <el-table-column prop="remainingCount" label="剩余" align="center" width="100">
+          <template #default="scope">
+            <el-tag :type="scope.row.remainingCount > 0 ? 'success' : 'danger'" size="small">
               {{ scope.row.remainingCount }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column label="操作" align="center" width="100">
           <template #default="scope">
             <el-button
                 size="small"
                 type="primary"
-                :disabled="scope.row.remainingCount <= 0"
+                :disabled="scope.row.remainingCount <= 0 || priceCalculating"
                 @click="handleBuyClick(scope.row)"
             >
               购买
@@ -181,24 +196,57 @@
           </template>
         </el-table-column>
       </el-table>
+
       <div v-if="!ticketLoading && inventoryList.length === 0" style="text-align:center;padding:30px;color:#909399;">
         暂无库存信息
       </div>
     </el-dialog>
 
     <!-- 购票确认对话框 -->
-    <el-dialog title="确认购票" v-model="buyDialogVisible" width="500px" @close="buyingItem = null">
-      <el-descriptions :column="1" border v-if="buyingItem">
-        <el-descriptions-item label="车次">{{ currentTrainNumber }}</el-descriptions-item>
-        <el-descriptions-item label="发车时间">{{ currentDepartureTimeStr }}</el-descriptions-item>
-        <el-descriptions-item label="座位类型">{{ getSeatTypeText(buyingItem.seatType) }}</el-descriptions-item>
-        <el-descriptions-item label="出发站">{{ getStartStationDisplay() }}（第{{ startStationSeq }}站）</el-descriptions-item>
-        <el-descriptions-item label="到达站">{{ getEndStationDisplay() }}（第{{ endStationSeq }}站）</el-descriptions-item>
-        <el-descriptions-item label="剩余票数">{{ buyingItem.remainingCount }} 张</el-descriptions-item>
-      </el-descriptions>
+    <el-dialog title="确认购票" v-model="buyDialogVisible" width="480px" @close="resetBuyDialog">
+      <div v-if="buyingItem" v-loading="priceCalculating">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="车次">
+            <span style="font-weight: bold; color: #409eff;">{{ currentTrainNumber }}</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="发车时间">{{ currentDepartureTimeStr }}</el-descriptions-item>
+          <el-descriptions-item label="座位类型">
+            <el-tag size="small" type="warning">{{ getSeatTypeText(buyingItem.seatType) }}</el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="出发站">{{ getStartStationDisplay() }}（第{{ startStationSeq }}站）</el-descriptions-item>
+          <el-descriptions-item label="到达站">{{ getEndStationDisplay() }}（第{{ endStationSeq }}站）</el-descriptions-item>
+          <el-descriptions-item label="票价">
+            <span v-if="calculatedPrice !== null" style="color: #e6a23c; font-weight: bold; font-size: 18px;">
+              ¥{{ formatPrice(calculatedPrice) }}
+            </span>
+            <span v-else style="color: #909399;">计算中...</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="剩余票数">
+            <el-tag :type="buyingItem.remainingCount > 0 ? 'success' : 'danger'" size="small">
+              {{ buyingItem.remainingCount }} 张
+            </el-tag>
+          </el-descriptions-item>
+        </el-descriptions>
+        <el-alert
+            v-if="buyingItem.remainingCount > 0 && buyingItem.remainingCount < 5"
+            title="温馨提示"
+            type="warning"
+            description="该座位类型余票紧张，请尽快购买！"
+            show-icon
+            :closable="false"
+            style="margin-top: 16px;"
+        />
+      </div>
       <template #footer>
         <el-button @click="buyDialogVisible = false">取消</el-button>
-        <el-button type="primary" :loading="buyLoading" @click="handleConfirmBuy">确认购买</el-button>
+        <el-button
+            type="primary"
+            :loading="buyLoading"
+            @click="handleConfirmBuy"
+            :disabled="calculatedPrice === null"
+        >
+          确认支付 ¥{{ formatPrice(calculatedPrice) }}
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -206,13 +254,15 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import { Search } from '@element-plus/icons-vue'
 import { querySchedulesByStations } from '@/api/DepartureApi.js'
 import { getTicketInventory } from '@/api/TicketApi.js'
 import { sellTicket } from '@/api/SaleApi.js'
+import { calculatePrice } from '@/api/ExtraApi.js'  // 从 ExtraApi 导入
 import { getRouteStations } from '@/api/RouteApi.js'
 import { getAllStations } from '@/api/StationApi.js'
+
 
 const searchForm = ref({
   startStationId: null,
@@ -239,6 +289,8 @@ const buyLoading = ref(false)
 const buyingItem = ref(null)
 const startStationSeq = ref(0)
 const endStationSeq = ref(0)
+const calculatedPrice = ref(null)
+const priceCalculating = ref(false)
 
 // 获取出发站显示名称
 const getStartStationDisplay = () => {
@@ -309,7 +361,6 @@ const calculateDuration = (departureTime, arrivalTime) => {
     const start = new Date(departureTime)
     const end = new Date(arrivalTime)
     const minutes = Math.round((end - start) / (60 * 1000))
-
     if (minutes < 0) return '--'
     if (minutes < 60) return `${minutes}分钟`
     const hours = Math.floor(minutes / 60)
@@ -320,19 +371,24 @@ const calculateDuration = (departureTime, arrivalTime) => {
   }
 }
 
-// 获取座位类型文本（与后端SeatTypeEnum一致：0=二等座 1=一等座 2=商务座）
+// 获取座位类型文本
 const getSeatTypeText = (type) => {
   const map = {
-    0: '二等座',
-    1: '一等座',
-    2: '商务座'
+    3: '商务座',
+    2: '一等座',
+    1: '二等座'
   }
-  return map[type] || ('类型' + type)
+  return map[type] || '类型' + type
+}
+
+// 格式化价格
+const formatPrice = (price) => {
+  if (price === null || price === undefined) return '0.00'
+  return Number(price).toFixed(2)
 }
 
 // 站点选择变化
 const onStationChange = () => {
-  // 清空搜索结果
   scheduleList.value = []
   searched.value = false
 }
@@ -350,8 +406,6 @@ const loadStations = async () => {
   }
 }
 
-// 查询车次
-// 查询车次
 // 查询车次
 const handleSearch = async () => {
   if (!searchForm.value.startStationId) {
@@ -371,7 +425,6 @@ const handleSearch = async () => {
 
   try {
     let startTime = searchForm.value.startTime
-
     if (!useTimeRange.value) {
       startTime = getCurrentDateTime()
     }
@@ -384,11 +437,8 @@ const handleSearch = async () => {
         100
     )
 
-    console.log('查询响应:', resp)
-
     if (resp.code === 200) {
       let records = []
-
       if (resp.data) {
         if (Array.isArray(resp.data)) {
           records = resp.data
@@ -399,8 +449,6 @@ const handleSearch = async () => {
         }
       }
 
-      console.log('获取到的 records:', records)
-
       if (records.length === 0) {
         scheduleList.value = []
         searched.value = true
@@ -408,22 +456,17 @@ const handleSearch = async () => {
         return
       }
 
-      // 转换数据 - 使用驼峰命名字段
-      scheduleList.value = records.map(item => {
-        return {
-          trainId: item.trainId,              // 驼峰
-          trainNumber: item.trainNumber,      // 驼峰
-          departureTime: item.departureTime,  // 驼峰
-          departureTimeStr: formatDateTime(item.departureTime),
-          arrivalTime: item.endArrivalTime,   // 驼峰：endArrivalTime
-          arrivalTimeStr: formatDateTime(item.endArrivalTime),
-          duration: calculateDuration(item.departureTime, item.endArrivalTime),
-          routerId: item.routerId,
-          routerName: item.routerName
-        }
-      })
-
-      console.log('转换后的 scheduleList:', scheduleList.value)
+      scheduleList.value = records.map(item => ({
+        trainId: item.trainId,
+        trainNumber: item.trainNumber,
+        departureTime: item.departureTime,
+        departureTimeStr: formatDateTime(item.departureTime),
+        arrivalTime: item.endArrivalTime,
+        arrivalTimeStr: formatDateTime(item.endArrivalTime),
+        duration: calculateDuration(item.departureTime, item.endArrivalTime),
+        routerId: item.routerId,
+        routerName: item.routerName
+      }))
 
       searched.value = true
       ElMessage.success(`找到 ${scheduleList.value.length} 个车次`)
@@ -461,7 +504,6 @@ const viewTickets = async (schedule) => {
   ticketLoading.value = true
 
   try {
-    // 加载库存
     const resp = await getTicketInventory(schedule.trainId, schedule.departureTime)
     if (resp.code === 200) {
       inventoryList.value = resp.data || []
@@ -469,7 +511,6 @@ const viewTickets = async (schedule) => {
       ElMessage.error(resp.message || '查询库存失败')
     }
 
-    // 加载路线站点，获取出发站/到达站的序号
     if (schedule.routerId) {
       const routeResp = await getRouteStations(schedule.routerId)
       if (routeResp.code === 200) {
@@ -488,8 +529,21 @@ const viewTickets = async (schedule) => {
   }
 }
 
-// 点击购买按钮，打开确认对话框
-const handleBuyClick = (item) => {
+// 重置库存对话框
+const resetInventory = () => {
+  inventoryList.value = []
+}
+
+// 重置购票对话框
+const resetBuyDialog = () => {
+  buyingItem.value = null
+  calculatedPrice.value = null
+  priceCalculating.value = false
+}
+
+// 点击购买按钮 - 先计算价格
+// 修改 handleBuyClick 函数中的票价计算部分
+const handleBuyClick = async (item) => {
   if (startStationSeq.value <= 0 || endStationSeq.value <= 0) {
     ElMessage.warning('无法确定站点序号，请重新查询')
     return
@@ -498,13 +552,46 @@ const handleBuyClick = (item) => {
     ElMessage.warning('出发站序号必须小于到达站序号')
     return
   }
+
   buyingItem.value = item
   buyDialogVisible.value = true
+  priceCalculating.value = true
+  calculatedPrice.value = null
+
+  try {
+    // 调用票价计算接口 - 注意参数顺序和传递方式
+    const resp = await calculatePrice(
+        currentSchedule.value.trainId,  // trainId
+        item.ticketId,                   // ticketId
+        startStationSeq.value,          // startStationSeq
+        endStationSeq.value             // endStationSeq
+    )
+
+    console.log('票价计算结果:', resp)
+
+    if (resp.code === 200) {
+      // 根据实际返回结构调整
+      calculatedPrice.value = resp.data || resp.price || 0
+    } else {
+      ElMessage.error(resp.message || '票价计算失败')
+      buyDialogVisible.value = false
+    }
+  } catch (error) {
+    console.error('票价计算失败:', error)
+    ElMessage.error('票价计算失败：' + (error.message || '未知错误'))
+    buyDialogVisible.value = false
+  } finally {
+    priceCalculating.value = false
+  }
 }
 
 // 确认购买
 const handleConfirmBuy = async () => {
   if (!buyingItem.value || !currentSchedule.value) return
+  if (calculatedPrice.value === null) {
+    ElMessage.warning('票价尚未计算完成，请稍候')
+    return
+  }
 
   buyLoading.value = true
   try {
@@ -521,7 +608,7 @@ const handleConfirmBuy = async () => {
       buyDialogVisible.value = false
       // 刷新库存
       if (currentSchedule.value) {
-        viewTickets(currentSchedule.value)
+        await viewTickets(currentSchedule.value)
       }
     } else {
       ElMessage.error(resp.message || '购票失败')
