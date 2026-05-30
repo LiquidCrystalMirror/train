@@ -188,6 +188,16 @@ curl -X POST http://localhost:8080/api/v1/sale/list \
   -d '{"pageNum":1,"pageSize":10}'
 ```
 
+### 管理员查询已售票聚合（含车票详情、用户ID、票价） `📊 查询`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/sale/sold/page \
+  -H "Content-Type: application/json" \
+  -d '{"pageNum":1,"pageSize":10}'
+```
+
+> 返回字段：saleId, userId, price, saleTime, saleStatus, startStationSeq, endStationSeq, ticketId, trainId, trainNumber, carriageNumber, seatNumber, seatType, ticketStatus, departureTime。一次 JOIN 三表（sale_info + ticket_info + train_info）。
+
 ### 根据车次ID查询售票记录 `📊 查询`
 
 ```bash
@@ -230,7 +240,7 @@ curl -X POST http://localhost:8080/api/v1/ticket/batch/generate \
 
 ---
 
-## 5. TicketController
+## 5. TicketController — 车票管理
 
 ### 分页查询车票 `📋 查询`
 
@@ -251,6 +261,41 @@ curl -X POST http://localhost:8080/api/v1/ticket/train \
 ```
 
 > 注：添加、修改、删除车票接口已被注释，车票通过批量生成接口统一创建。
+
+---
+
+## 5b. TicketQueryController — 票务聚合查询
+
+### 查询库存（按车次+发车时间，返回座位类型聚合） `📋 查询`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ticket/inventory \
+  -H "Content-Type: application/json" \
+  -d '{"trainId":1,"departureTime":"2025-06-01T10:00:00"}'
+```
+
+> 返回 `TicketInventory` 列表：trainId, departureTime, seatType, totalCount, soldCount, remainingCount。用于用户端余票展示。
+
+### 根据车票ID查上下车站详情 `📋 查询`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ticket/station-detail \
+  -H "Content-Type: application/json" \
+  -d '{"ticketId":100}'
+```
+
+> 返回：ticketId, trainId, trainNumber, departureTime, seatType, seatTypeName, carriageNumber, seatNumber, startStation{stationId,stationName,seq}, endStation{stationId,stationName,seq}。
+> 从 ticketId → SaleInfo → TrainInfo → RouterStation → Station 全链路查询。
+
+### 根据车次ID查完整路线（含站点名称） `📋 查询`
+
+```bash
+curl -X POST http://localhost:8080/api/v1/ticket/train-route \
+  -H "Content-Type: application/json" \
+  -d '{"trainId":1}'
+```
+
+> 返回：trainId, trainNumber, routerId, routerName, isForward, stations[{stationId,stationName,seq,stayMinutes}]。
 
 ---
 
@@ -492,6 +537,8 @@ curl -X GET "http://localhost:8080/api/v1/route/stations?routerId=100"
 
 ### 售票（需登录，携带 token） `❌ 单个`
 
+**模式一：指定 ticketId（管理员/旧流程）**
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/sale/do \
   -H "Content-Type: application/json" \
@@ -504,7 +551,22 @@ curl -X POST http://localhost:8080/api/v1/sale/do \
   }'
 ```
 
-> 注：`price` 字段无需手动传入，后台会根据票价策略和座位类型自动计算。
+**模式二：按座位类型随机选票购票（用户端）**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/sale/do \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer <your_jwt_token>" \
+  -d '{
+    "trainId": 1,
+    "departureTime": "2025-06-01T10:00:00",
+    "seatType": 0,
+    "startStationSeq": 1,
+    "endStationSeq": 3
+  }'
+```
+
+> 注：模式二 `seatType` 编码：0=二等座、1=一等座、2=商务座。后端自动随机分配一张该类型的可售票。`price` 由后台根据票价策略和座位类型自动计算，无需手动传入。
 
 ### 计算票价（需登录，携带 token） `📋 查询`
 

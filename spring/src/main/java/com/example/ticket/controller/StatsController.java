@@ -13,6 +13,7 @@ import com.example.ticket.mapper.TrainInfoMapper;
 import com.example.ticket.mapper.TicketInfoMapper;
 import com.example.ticket.mapper.UserMapper;
 import com.example.ticket.util.ApiResult;
+import com.example.ticket.vo.SaleTicketVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
@@ -257,6 +258,22 @@ public class StatsController {
                 .eq(SaleInfo::getTicketId, ticketId)
                 .orderByDesc(SaleInfo::getSaleTime));
         return ApiResult.success("查询成功", sales);
+    }
+
+    // ==================== 已售票聚合查询（管理员） ====================
+
+    /**
+     * 分页查询所有已售票（含车票详情、车次号、用户ID、票价）
+     */
+    @PostMapping("/sale/sold/page")
+    public ApiResult<Page<SaleTicketVO>> getSoldTickets(@RequestBody Map<String, Object> params) {
+        int pageNum = params.containsKey("pageNum") ? ((Number) params.get("pageNum")).intValue() : 1;
+        int pageSize = params.containsKey("pageSize") ? ((Number) params.get("pageSize")).intValue() : 10;
+
+        Page<SaleTicketVO> page = new Page<>(pageNum, pageSize);
+        saleInfoMapper.selectSoldTicketPage(page);
+
+        return ApiResult.success("查询成功", page);
     }
 
     // ==================== 退票列表接口 ====================
