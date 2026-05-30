@@ -178,7 +178,7 @@ CREATE TABLE `ticket_info`  (
   `create_time` datetime NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `departure_time` datetime NULL DEFAULT NULL,
   PRIMARY KEY (`ticket_id`) USING BTREE,
-  UNIQUE INDEX `uk_train_seat`(`train_id` ASC, `carriage_number` ASC, `seat_number` ASC) USING BTREE,
+  UNIQUE INDEX `uk_train_seat`(`train_id` ASC, `carriage_number` ASC, `seat_number` ASC, `departure_time` ASC) USING BTREE,
   INDEX `idx_train_id`(`train_id` ASC) USING BTREE,
   INDEX `idx_ticket_status`(`ticket_status` ASC) USING BTREE,
   CONSTRAINT `ticket_info_ibfk_1` FOREIGN KEY (`train_id`) REFERENCES `train_info` (`train_id`) ON DELETE CASCADE ON UPDATE CASCADE

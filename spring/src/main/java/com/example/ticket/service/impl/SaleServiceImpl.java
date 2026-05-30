@@ -39,7 +39,6 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
     @Transactional(rollbackFor = Exception.class)
     public Integer sellTicket(SaleInfo saleInfo, String userId) {
         // 1. 参数校验
-        if (saleInfo.getTicketId() == null) throw new BusinessException("车票ID不能为空");
         if (saleInfo.getStartStationSeq() == null || saleInfo.getEndStationSeq() == null) {
             throw new BusinessException("上下车站点序号不能为空");
         }
@@ -47,9 +46,23 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
             throw new BusinessException("上车站点序号必须小于下车站点序号");
         }
 
-        // 2. 查询车票信息
-        TicketInfo ticket = ticketInfoMapper.selectById(saleInfo.getTicketId());
-        if (ticket == null) throw new BusinessException(404, "车票不存在");
+        // 2. 确定车票：支持两种模式
+        TicketInfo ticket;
+        if (saleInfo.getTicketId() != null) {
+            // 模式一：直接指定 ticketId（管理员/旧流程）
+            ticket = ticketInfoMapper.selectById(saleInfo.getTicketId());
+            if (ticket == null) throw new BusinessException(404, "车票不存在");
+        } else if (saleInfo.getSeatType() != null && saleInfo.getTrainId() != null
+                && saleInfo.getDepartureTime() != null) {
+            // 模式二：按座位类型随机选一张可售票（用户端）
+            ticket = ticketInfoMapper.selectOneAvailableRandom(
+                    saleInfo.getTrainId(), saleInfo.getDepartureTime(), saleInfo.getSeatType());
+            if (ticket == null) throw new BusinessException("该类型车票已售罄");
+            saleInfo.setTicketId(ticket.getTicketId());
+        } else {
+            throw new BusinessException("请指定车票ID，或选择座位类型购票");
+        }
+
         if (!"可售".equals(ticket.getTicketStatus())) {
             throw new BusinessException("车票状态不可售，当前状态：" + ticket.getTicketStatus());
         }

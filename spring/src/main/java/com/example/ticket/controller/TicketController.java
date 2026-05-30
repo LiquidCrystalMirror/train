@@ -2,11 +2,14 @@ package com.example.ticket.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.example.ticket.entity.TicketInfo;
+import com.example.ticket.entity.TicketInventory;
 import com.example.ticket.mapper.TicketInfoMapper;
+import com.example.ticket.mapper.TicketInventoryMapper;
 import com.example.ticket.service.TicketService;
 import com.example.ticket.util.ApiResult;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -19,6 +22,9 @@ public class TicketController {
     
     @Resource
     private TicketInfoMapper ticketInfoMapper;
+
+    @Resource
+    private TicketInventoryMapper ticketInventoryMapper;
 
     // ===================== 【新加】车票列表 =====================
     @PostMapping("/list")
@@ -40,6 +46,22 @@ public class TicketController {
         Integer trainId = params.get("trainId");
         List<TicketInfo> tickets = ticketInfoMapper.selectByTrainId(trainId);
         return ApiResult.success("查询成功", tickets);
+    }
+
+    // ===================== 库存查询（用户端） =====================
+    @PostMapping("/inventory")
+    public ApiResult<List<TicketInventory>> getInventory(@RequestBody Map<String, Object> params) {
+        Integer trainId = params.get("trainId") != null ?
+                ((Number) params.get("trainId")).intValue() : null;
+        LocalDateTime departureTime = params.get("departureTime") != null ?
+                LocalDateTime.parse((String) params.get("departureTime")) : null;
+
+        if (trainId == null || departureTime == null) {
+            return ApiResult.error(400, "车次ID和发车时间不能为空");
+        }
+
+        List<TicketInventory> list = ticketInventoryMapper.selectByTrainAndDeparture(trainId, departureTime);
+        return ApiResult.success("查询成功", list);
     }
 
 //    // 修改车票

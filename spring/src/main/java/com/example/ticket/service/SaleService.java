@@ -6,9 +6,11 @@ import com.example.ticket.entity.SaleInfo;
 public interface SaleService extends IService<SaleInfo> {
     
     /**
-     * 售票业务方法
-     * @param saleInfo 售票信息
-     * @param userId 用户ID（字符串类型）
+     * 售票业务方法（支持两种模式）
+     * 1. 指定 ticketId 购票（管理员/旧流程）
+     * 2. 按 seatType 随机选票购票（用户端新流程）
+     * @param saleInfo 售票信息（ticketId或seatType二选一）
+     * @param userId 用户ID
      * @return 售票记录ID
      */
     Integer sellTicket(SaleInfo saleInfo, String userId);

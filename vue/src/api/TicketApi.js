@@ -7,8 +7,14 @@ export function getTicketPage(params) {
 }
 
 // 根据车次ID查询车票
+// @deprecated 请使用 getTicketInventory 代替
 export function getTicketsByTrain(trainId) {
     return post('/api/v1/ticket/train', { trainId })
+}
+
+// 查询库存（按车次+发车时间，返回按座位类型聚合的库存）
+export function getTicketInventory(trainId, departureTime) {
+    return post('/api/v1/ticket/inventory', { trainId, departureTime })
 }
 
 // 以下接口后端已注释，暂时不可用

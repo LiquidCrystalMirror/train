@@ -254,7 +254,7 @@ User (1) ──────< (N) SaleInfo
 | price | DECIMAL(10,2) | NOT NULL | 售价 |
 
 **约束：**
-- uk_train_seat：UNIQUE(train_id, carriage_number, seat_number) - 同一车次座位唯一
+- uk_train_seat：UNIQUE(train_id, carriage_number, seat_number, departure_time) - 同一车次+发车时间的座位组合唯一
 - fk_ticket_train：FOREIGN KEY (train_id) REFERENCES train_info(train_id)
 
 **索引：**
