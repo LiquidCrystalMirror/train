@@ -8,6 +8,7 @@ import com.example.ticket.util.ApiResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -76,15 +77,19 @@ public class TicketQueryController {
         // 4. 查路线站点列表
         List<RouterStation> routeStations = routerStationMapper.selectByRouterId(train.getRouterId());
 
-        // 5. 匹配上下车序号对应的站点
+        // 5. 匹配上下车序号对应的站点，同时获取timePrefixSum
         Integer startStationId = null;
         Integer endStationId = null;
+        Double startTimePrefixSum = null;
+        Double endTimePrefixSum = null;
         for (RouterStation rs : routeStations) {
             if (rs.getStationSeq().equals(sale.getStartStationSeq())) {
                 startStationId = rs.getStationId();
+                startTimePrefixSum = rs.getTimePrefixSum();
             }
             if (rs.getStationSeq().equals(sale.getEndStationSeq())) {
                 endStationId = rs.getStationId();
+                endTimePrefixSum = rs.getTimePrefixSum();
             }
         }
 
@@ -92,13 +97,24 @@ public class TicketQueryController {
         Station startStation = startStationId != null ? stationMapper.selectById(startStationId) : null;
         Station endStation = endStationId != null ? stationMapper.selectById(endStationId) : null;
 
-        // 7. 组装结果
+        // 7. 计算各站实际到达时间（始发站发车时间 + timePrefixSum）
+        LocalDateTime departureTime = ticket.getDepartureTime();
+        LocalDateTime startArrivalTime = null;
+        LocalDateTime endArrivalTime = null;
+        if (departureTime != null && startTimePrefixSum != null) {
+            startArrivalTime = departureTime.plusMinutes((long) (double) startTimePrefixSum);
+        }
+        if (departureTime != null && endTimePrefixSum != null) {
+            endArrivalTime = departureTime.plusMinutes((long) (double) endTimePrefixSum);
+        }
+
+        // 8. 组装结果
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("ticketId", ticket.getTicketId());
         result.put("trainId", train.getTrainId());
         result.put("trainNumber", train.getTrainNumber());
-        result.put("departureTime", ticket.getDepartureTime() != null
-                ? ticket.getDepartureTime().toString() : null);
+        result.put("departureTime", departureTime != null
+                ? departureTime.toString() : null);
         result.put("seatType", ticket.getSeatType());
         result.put("seatTypeName", SeatTypeEnum.getDescriptionByCode(ticket.getSeatType()));
 
@@ -106,12 +122,14 @@ public class TicketQueryController {
         startInfo.put("stationId", startStationId);
         startInfo.put("stationName", startStation != null ? startStation.getStationName() : null);
         startInfo.put("seq", sale.getStartStationSeq());
+        startInfo.put("arrivalTime", startArrivalTime != null ? startArrivalTime.toString() : null);
         result.put("startStation", startInfo);
 
         Map<String, Object> endInfo = new LinkedHashMap<>();
         endInfo.put("stationId", endStationId);
         endInfo.put("stationName", endStation != null ? endStation.getStationName() : null);
         endInfo.put("seq", sale.getEndStationSeq());
+        endInfo.put("arrivalTime", endArrivalTime != null ? endArrivalTime.toString() : null);
         result.put("endStation", endInfo);
 
         result.put("carriageNumber", ticket.getCarriageNumber());

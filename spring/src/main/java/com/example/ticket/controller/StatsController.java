@@ -14,10 +14,13 @@ import com.example.ticket.mapper.TicketInfoMapper;
 import com.example.ticket.mapper.UserMapper;
 import com.example.ticket.util.ApiResult;
 import com.example.ticket.vo.SaleTicketVO;
+import com.example.ticket.vo.UserPurchaseVO;
+import com.example.ticket.vo.UserRefundVO;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -188,35 +191,53 @@ public class StatsController {
     }
 
     /**
-     * 分页查询用户的购票记录
+     * 分页查询用户的购票记录（含站点名称和计算后的各站到达时间）
      */
     @PostMapping("/sale/user/page")
-    public ApiResult<Page<SaleInfo>> getUserPurchasePage(@RequestBody Map<String, Object> params) {
+    public ApiResult<Page<UserPurchaseVO>> getUserPurchasePage(@RequestBody Map<String, Object> params) {
         int pageNum = params.containsKey("pageNum") ? (Integer) params.get("pageNum") : 1;
         int pageSize = params.containsKey("pageSize") ? (Integer) params.get("pageSize") : 10;
         String userId = (String) params.get("userId");
         
-        Page<SaleInfo> page = new Page<>(pageNum, pageSize);
-        saleInfoMapper.selectPage(page, Wrappers.<SaleInfo>lambdaQuery()
-                .eq(SaleInfo::getUserId, userId)
-                .orderByDesc(SaleInfo::getSaleTime));
+        Page<UserPurchaseVO> page = new Page<>(pageNum, pageSize);
+        saleInfoMapper.selectUserPurchasePage(page, userId);
+        
+        // 计算各站实际到达时间（始发站发车时间 + timePrefixSum）
+        for (UserPurchaseVO vo : page.getRecords()) {
+            LocalDateTime departureTime = vo.getDepartureTime();
+            if (departureTime != null && vo.getStartTimePrefixSum() != null) {
+                vo.setStartArrivalTime(departureTime.plusMinutes((long) (double) vo.getStartTimePrefixSum()));
+            }
+            if (departureTime != null && vo.getEndTimePrefixSum() != null) {
+                vo.setEndArrivalTime(departureTime.plusMinutes((long) (double) vo.getEndTimePrefixSum()));
+            }
+        }
         
         return ApiResult.success("查询成功", page);
     }
 
     /**
-     * 分页查询用户的退票记录
+     * 分页查询用户的退票记录（含站点名称和计算后的各站到达时间）
      */
     @PostMapping("/refund/user/page")
-    public ApiResult<Page<RefundInfo>> getUserRefundPage(@RequestBody Map<String, Object> params) {
+    public ApiResult<Page<UserRefundVO>> getUserRefundPage(@RequestBody Map<String, Object> params) {
         int pageNum = params.containsKey("pageNum") ? (Integer) params.get("pageNum") : 1;
         int pageSize = params.containsKey("pageSize") ? (Integer) params.get("pageSize") : 10;
         String userId = (String) params.get("userId");
         
-        Page<RefundInfo> page = new Page<>(pageNum, pageSize);
-        refundInfoMapper.selectPage(page, Wrappers.<RefundInfo>lambdaQuery()
-                .eq(RefundInfo::getUserId, userId)
-                .orderByDesc(RefundInfo::getRefundTime));
+        Page<UserRefundVO> page = new Page<>(pageNum, pageSize);
+        refundInfoMapper.selectUserRefundPage(page, userId);
+        
+        // 计算各站实际到达时间
+        for (UserRefundVO vo : page.getRecords()) {
+            LocalDateTime departureTime = vo.getDepartureTime();
+            if (departureTime != null && vo.getStartTimePrefixSum() != null) {
+                vo.setStartArrivalTime(departureTime.plusMinutes((long) (double) vo.getStartTimePrefixSum()));
+            }
+            if (departureTime != null && vo.getEndTimePrefixSum() != null) {
+                vo.setEndArrivalTime(departureTime.plusMinutes((long) (double) vo.getEndTimePrefixSum()));
+            }
+        }
         
         return ApiResult.success("查询成功", page);
     }

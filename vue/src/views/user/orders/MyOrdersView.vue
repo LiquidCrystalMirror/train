@@ -6,11 +6,18 @@
         <div class="table-container">
           <el-table :data="purchaseList" stripe border style="width: 100%" v-loading="purchaseLoading">
             <el-table-column prop="trainNumber" label="车次号" align="center" min-width="100" />
+            <el-table-column prop="carriageNumber" label="车厢号" align="center" width="80" />
+            <el-table-column prop="seatNumber" label="座位号" align="center" width="80" />
             <el-table-column prop="startStationName" label="出发站" align="center" min-width="120" />
-            <el-table-column prop="endStationName" label="到达站" align="center" min-width="120" />
-            <el-table-column prop="departureTime" label="发车时间" align="center" min-width="160">
+            <el-table-column prop="startArrivalTime" label="上车时间" align="center" min-width="160">
               <template #default="scope">
-                {{ formatDateTime(scope.row.departureTime) }}
+                <span style="color: #409EFF; font-weight: 500;">{{ formatDateTime(scope.row.startArrivalTime) }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column prop="endStationName" label="到达站" align="center" min-width="120" />
+            <el-table-column prop="endArrivalTime" label="下车时间" align="center" min-width="160">
+              <template #default="scope">
+                <span style="color: #67c23a; font-weight: 500;">{{ formatDateTime(scope.row.endArrivalTime) }}</span>
               </template>
             </el-table-column>
             <el-table-column prop="seatTypeName" label="座位类型" align="center" min-width="100">
@@ -58,11 +65,18 @@
         <div class="table-container">
           <el-table :data="refundList" stripe border style="width: 100%" v-loading="refundLoading">
             <el-table-column prop="trainNumber" label="车次号" align="center" min-width="100" />
+            <el-table-column prop="carriageNumber" label="车厢号" align="center" width="80" />
+            <el-table-column prop="seatNumber" label="座位号" align="center" width="80" />
             <el-table-column prop="startStationName" label="出发站" align="center" min-width="120" />
-            <el-table-column prop="endStationName" label="到达站" align="center" min-width="120" />
-            <el-table-column prop="departureTime" label="发车时间" align="center" min-width="160">
+            <el-table-column prop="startArrivalTime" label="上车时间" align="center" min-width="160">
               <template #default="scope">
-                {{ formatDateTime(scope.row.departureTime) }}
+                {{ formatDateTime(scope.row.startArrivalTime) }}
+              </template>
+            </el-table-column>
+            <el-table-column prop="endStationName" label="到达站" align="center" min-width="120" />
+            <el-table-column prop="endArrivalTime" label="下车时间" align="center" min-width="160">
+              <template #default="scope">
+                {{ formatDateTime(scope.row.endArrivalTime) }}
               </template>
             </el-table-column>
             <el-table-column prop="seatTypeName" label="座位类型" align="center" min-width="100">
