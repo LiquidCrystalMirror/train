@@ -42,8 +42,7 @@ public class MyWebConfig implements WebMvcConfigurer {
                         "/api/v1/g/**",
                         // 静态资源
                         "/static/**",
-                        "/favicon.ico",
-                        "/**"
+                        "/favicon.ico"
                 );
         
         // 2. Role拦截器（第二层：验证权限，只处理JWT已放行的请求）

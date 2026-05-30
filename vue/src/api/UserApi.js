@@ -1,4 +1,5 @@
-import { post, get, put } from "@/request/request.js"
+// src/api/UserApi.js
+import { post, get, put, del } from "@/request/request.js"
 
 // 分页查询用户
 export function getUserPage(params) {
@@ -15,7 +16,7 @@ export function updateUser(id, params) {
     return put(`/api/v1/admin/user/update`, params)
 }
 
-// 管理员删除用户
+// 管理员删除用户（修正：改为DELETE请求）
 export function deleteUser(id) {
-    return post(`/api/v1/admin/user/${id}`)
+    return del(`/api/v1/admin/user/${id}`)
 }

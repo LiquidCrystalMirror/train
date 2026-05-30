@@ -3,7 +3,7 @@
     <el-row :gutter="20">
       <!-- 统计卡片 -->
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" v-loading="loading">
           <div class="stat-content">
             <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
               <el-icon :size="40"><User /></el-icon>
@@ -15,9 +15,9 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" v-loading="loading">
           <div class="stat-content">
             <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%)">
               <el-icon :size="40"><List /></el-icon>
@@ -29,9 +29,9 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" v-loading="loading">
           <div class="stat-content">
             <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)">
               <el-icon :size="40"><Ticket /></el-icon>
@@ -43,9 +43,9 @@
           </div>
         </el-card>
       </el-col>
-      
+
       <el-col :span="6">
-        <el-card class="stat-card">
+        <el-card class="stat-card" v-loading="loading">
           <div class="stat-content">
             <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)">
               <el-icon :size="40"><ShoppingCart /></el-icon>
@@ -109,12 +109,17 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
 import { User, List, Ticket, ShoppingCart, Document } from '@element-plus/icons-vue'
 import authService from '@/service/AuthService.js'
+import { getSystemStats, getUserStats, getTrainStats, getTicketStats, getOrderStats } from '@/api/ExtraApi.js'
 
 const router = useRouter()
 
-// 统计数据（实际应该从后端获取）
+// 加载状态
+const loading = ref(false)
+
+// 统计数据
 const stats = ref({
   userCount: 0,
   trainCount: 0,
@@ -145,15 +150,66 @@ const goToPage = (path) => {
   router.push(path)
 }
 
-onMounted(() => {
-  // TODO: 从后端获取统计数据
-  // 这里只是示例数据
-  stats.value = {
-    userCount: 0,
-    trainCount: 0,
-    ticketCount: 0,
-    orderCount: 0
+// 加载统计数据
+const loadStats = async () => {
+  loading.value = true
+  try {
+    // 并发请求所有统计数据
+    const [systemStatsRes, userStatsRes, trainStatsRes, ticketStatsRes, orderStatsRes] = await Promise.allSettled([
+      getSystemStats(),
+      getUserStats(),
+      getTrainStats(),
+      getTicketStats(),
+      getOrderStats()
+    ])
+
+    // 处理系统统计
+    if (systemStatsRes.status === 'fulfilled' && systemStatsRes.value.code === 200) {
+      const data = systemStatsRes.value.data
+      stats.value.userCount = data.userCount || 0
+      stats.value.trainCount = data.trainCount || 0
+      stats.value.ticketCount = data.ticketCount || 0
+      stats.value.orderCount = data.orderCount || 0
+    } else {
+      console.warn('获取系统统计失败', systemStatsRes)
+    }
+
+    // 如果有更详细的统计数据，可以补充
+    // 用户统计详情
+    if (userStatsRes.status === 'fulfilled' && userStatsRes.value.code === 200) {
+      const data = userStatsRes.value.data
+      // 可以选择显示更详细的用户统计，如管理员数量等
+      console.log('用户统计详情:', data)
+    }
+
+    // 车次统计详情
+    if (trainStatsRes.status === 'fulfilled' && trainStatsRes.value.code === 200) {
+      const data = trainStatsRes.value.data
+      console.log('车次统计详情:', data)
+    }
+
+    // 车票统计详情
+    if (ticketStatsRes.status === 'fulfilled' && ticketStatsRes.value.code === 200) {
+      const data = ticketStatsRes.value.data
+      console.log('车票统计详情:', data)
+    }
+
+    // 订单统计详情
+    if (orderStatsRes.status === 'fulfilled' && orderStatsRes.value.code === 200) {
+      const data = orderStatsRes.value.data
+      console.log('订单统计详情:', data)
+    }
+
+  } catch (error) {
+    console.error('加载统计数据失败:', error)
+    ElMessage.warning('加载统计数据失败，请刷新页面重试')
+  } finally {
+    loading.value = false
   }
+}
+
+onMounted(() => {
+  loadStats()
 })
 </script>
 

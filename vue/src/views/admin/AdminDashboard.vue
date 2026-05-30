@@ -50,8 +50,9 @@
             <el-icon><HomeFilled /></el-icon>
             <span>首页</span>
           </el-menu-item>
-          
-          <el-sub-menu index="1">
+
+          <!-- 系统管理 - 仅管理员可见 -->
+          <el-sub-menu index="1" v-if="isAdmin">
             <template #title>
               <el-icon><Setting /></el-icon>
               <span>系统管理</span>
@@ -61,8 +62,9 @@
               <span>用户管理</span>
             </el-menu-item>
           </el-sub-menu>
-          
-          <el-sub-menu index="2">
+
+          <!-- 基础数据 - 仅管理员可见 -->
+          <el-sub-menu index="2" v-if="isAdmin">
             <template #title>
               <el-icon><Document /></el-icon>
               <span>基础数据</span>
@@ -83,41 +85,47 @@
               <el-icon><Tickets /></el-icon>
               <span>车次管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin/train-search">
-              <el-icon><Search /></el-icon>
-              <span>车次查询</span>
-            </el-menu-item>
             <el-menu-item index="/admin/ticket">
               <el-icon><Ticket /></el-icon>
               <span>车票管理</span>
             </el-menu-item>
           </el-sub-menu>
-          
-          <el-sub-menu index="3">
+
+          <!-- 车次查询 - 所有用户可见 -->
+          <el-menu-item index="/admin/train-search" v-if="!isAdmin">
+            <el-icon><Search /></el-icon>
+            <span>车次查询</span>
+          </el-menu-item>
+
+          <!-- 售票管理 - 仅普通用户可见 -->
+          <el-sub-menu index="3" v-if="!isAdmin">
             <template #title>
               <el-icon><ShoppingCart /></el-icon>
-              <span>售票管理</span>
+              <span>购票管理</span>
             </template>
             <el-menu-item index="/admin/sale">
               <el-icon><ShoppingCart /></el-icon>
-              <span>售票</span>
+              <span>购票</span>
             </el-menu-item>
             <el-menu-item index="/admin/refund">
               <el-icon><Close /></el-icon>
               <span>退票</span>
             </el-menu-item>
           </el-sub-menu>
-          
+
+          <!-- 订单查询 -->
           <el-sub-menu index="4">
             <template #title>
               <el-icon><Document /></el-icon>
               <span>订单查询</span>
             </template>
-            <el-menu-item index="/admin/orders">
+            <!-- 管理员显示订单记录 -->
+            <el-menu-item index="/admin/orders" v-if="isAdmin">
               <el-icon><Document /></el-icon>
               <span>订单记录</span>
             </el-menu-item>
-            <el-menu-item index="/admin/my-orders">
+            <!-- 普通用户显示我的订单 -->
+            <el-menu-item index="/admin/my-orders" v-if="!isAdmin">
               <el-icon><Tickets /></el-icon>
               <span>我的订单</span>
             </el-menu-item>
@@ -172,6 +180,12 @@ const userName = computed(() => {
   return userData ? (userData.realName || userData.username || '用户') : '用户'
 })
 
+// 判断当前用户是否为管理员
+const isAdmin = computed(() => {
+  const userData = user.value
+  return userData && (userData.role === 'admin' || userData.role === 'ADMIN' || userData.role === 1)
+})
+
 onMounted(() => {
   if (!authService.checkAuth()) {
     return
@@ -196,8 +210,6 @@ const handleCommand = (command) => {
 }
 
 </script>
-
-
 
 
 <style scoped>

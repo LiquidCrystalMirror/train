@@ -1,3 +1,4 @@
+// src/api/TrainApi.js
 import { post } from "@/request/request.js"
 
 // 分页查询车次
@@ -30,12 +31,18 @@ export function queryByNumber(number) {
     return post('/api/v1/train/query/number', { number })
 }
 
-// 按起止站点查询
-export function queryByStations(startStationId, endStationId) {
-    return post('/api/v1/train/query/stations', { startStationId, endStationId })
+// 按起止站点查询（修正：实际接口在DepartureController）
+export function queryByStations(startStationId, endStationId, startTime, pageNum, pageSize) {
+    return post('/api/v1/departure/queryByStations', {
+        startStationId,
+        endStationId,
+        startTime,
+        pageNum,
+        pageSize
+    })
 }
 
-// 按时间范围查询
+// 按时间范围查询（修正：实际接口在DepartureController）
 export function queryByTimeRange(startTime, endTime) {
-    return post('/api/v1/train/query/timeRange', { startTime, endTime })
+    return post('/api/v1/departure/query/timeRange', { startTime, endTime })
 }

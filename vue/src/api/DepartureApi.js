@@ -1,3 +1,4 @@
+// src/api/DepartureApi.js
 import { post } from '@/request/request.js'
 
 /**
@@ -22,4 +23,15 @@ export function createSchedule(data) {
 // 删除发车时间表
 export function deleteSchedule(id) {
     return post('/api/v1/departure/delete', { id })
+}
+
+// 查询直达车次（新增 - 对应DepartureController.queryByStations）
+export function querySchedulesByStations(startStationId, endStationId, startTime, pageNum, pageSize) {
+    return post('/api/v1/departure/queryByStations', {
+        startStationId,
+        endStationId,
+        startTime,
+        pageNum,
+        pageSize
+    })
 }

@@ -1,3 +1,4 @@
+// src/api/ExtraApi.js
 import { post, get } from "@/request/request.js"
 
 // ==================== 统计接口 ====================
@@ -78,7 +79,7 @@ export function getRefundBySale(saleId) {
     return get(`/api/v1/refund/sale/${saleId}`)
 }
 
-// ==================== 站点管理接口（可选扩展）====================
+// ==================== 站点管理接口 ====================
 
 // 查询所有站点
 export function getAllStations() {
@@ -100,31 +101,31 @@ export function deleteStation(id) {
     return post('/api/v1/station/delete', { id })
 }
 
-// ==================== 车次站点关联接口（可选扩展）====================
+// ==================== 价格管理接口（修正）====================
 
-// 查询车次的站点序列
-export function getTrainStations(trainId) {
-    return get(`/api/v1/train/${trainId}/stations`)
+// 查询车次的价格梯度列表
+export function getPriceList(trainId) {
+    return post('/api/v1/price/list', { trainId })
 }
 
-// 设置车次的站点序列
-export function setTrainStations(trainId, stations) {
-    return post(`/api/v1/train/${trainId}/stations`, stations)
+// 设置单个价格梯度
+export function setPrice(trainId, stationCount, price) {
+    return post('/api/v1/price/set', { trainId, stationCount, price })
 }
 
-// ==================== 价格管理接口（可选扩展）====================
-
-// 查询票价规则
-export function getPriceRules() {
-    return get('/api/v1/price/rules')
+// 批量设置价格梯度
+export function batchSetPrices(trainId, priceList) {
+    return post('/api/v1/price/batch', { trainId, priceList })
 }
 
-// 更新票价规则
-export function updatePriceRules(params) {
-    return post('/api/v1/price/update', params)
+// 检查价格梯度是否完整
+export function checkPriceComplete(trainId, totalStationCount) {
+    return post('/api/v1/price/check-complete', { trainId, totalStationCount })
 }
 
-// 计算票价
-export function calculatePrice(params) {
-    return post('/api/v1/price/calculate', params)
+// 计算票价（修正：实际在SaleController中）
+export function calculatePrice(trainId, ticketId, startStationSeq, endStationSeq) {
+    return post('/api/v1/sale/calculate-price', null, {
+        params: { trainId, ticketId, startStationSeq, endStationSeq }
+    })
 }

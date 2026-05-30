@@ -1,17 +1,21 @@
 <template>
   <div class="ticket-management">
-    <!-- 搜索表单和操作按钮 -->
+    <!-- 搜索表单 -->
     <div class="search-bar">
       <el-form :model="searchForm" class="search-form">
         <el-row :gutter="10">
           <el-col :span="6">
             <el-form-item label="车次ID">
-              <el-input v-model="searchForm.find" placeholder="请输入车次ID" clearable />
+              <el-input
+                  v-model="searchForm.trainId"
+                  placeholder="请输入车次ID"
+                  clearable
+              />
             </el-form-item>
           </el-col>
           <el-col :span="6">
             <el-form-item>
-              <el-button type="primary" @click="loadData">
+              <el-button type="primary" @click="handleSearch">
                 <el-icon><Search /></el-icon>
                 查询
               </el-button>
@@ -23,19 +27,17 @@
           </el-col>
         </el-row>
       </el-form>
-      
-      <!-- 操作按钮 -->
-      <div class="action-buttons">
-        <el-button type="primary" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
-          新增车票
-        </el-button>
-      </div>
     </div>
 
     <!-- 数据表格 -->
     <div class="table-container">
-      <el-table :data="tableData" stripe border style="width: 100%;">
+      <el-table
+          :data="tableData"
+          stripe
+          border
+          style="width: 100%"
+          v-loading="loading"
+      >
         <el-table-column prop="ticketId" label="ID" align="center" />
         <el-table-column prop="trainId" label="车次ID" align="center" />
         <el-table-column prop="carriageNumber" label="车厢号" align="center" />
@@ -45,26 +47,16 @@
             {{ getSeatTypeName(scope.row.seatType) }}
           </template>
         </el-table-column>
-        <el-table-column prop="price" label="价格" align="center">
+        <el-table-column prop="price" label="价格(元)" align="center">
           <template #default="scope">
-            ¥{{ scope.row.price }}
+            ¥{{ formatPrice(scope.row.price) }}
           </template>
         </el-table-column>
         <el-table-column prop="ticketStatus" label="状态" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.ticketStatus === 'available' ? 'success' : 'info'">
-              {{ scope.row.ticketStatus === 'available' ? '可售' : '已售' }}
+            <el-tag :type="getTicketStatusType(scope.row.ticketStatus)" size="small">
+              {{ scope.row.ticketStatus }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" align="center">
-          <template #default="scope">
-            <el-button size="small" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-popconfirm title="确定要删除吗？" @confirm="handleDelete(scope.row.ticketId)">
-              <template #reference>
-                <el-button size="small" type="danger">删除</el-button>
-              </template>
-            </el-popconfirm>
           </template>
         </el-table-column>
       </el-table>
@@ -72,171 +64,140 @@
 
     <!-- 分页 -->
     <el-pagination
-      class="mgt-4"
-      v-model:current-page="searchForm.pageNum"
-      v-model:page-size="searchForm.pageSize"
-      :page-sizes="[5, 10, 20, 50]"
-      layout="total, sizes, prev, pager, next, jumper"
-      :total="total"
-      @size-change="loadData"
-      @current-change="loadData"
+        v-if="!isSearchByTrainId"
+        class="mgt-4"
+        v-model:current-page="pagination.pageNum"
+        v-model:page-size="pagination.pageSize"
+        layout="total, prev, pager, next, jumper"
+        :total="total"
+        @current-change="loadAllTickets"
     />
 
-    <!-- 编辑对话框 -->
-    <el-dialog :title="form.ticketId ? '编辑车票' : '新增车票'" v-model="dialogVisible" width="600px">
-      <el-form label-width="100px" :model="form" :rules="rules" ref="formRef">
-        <el-form-item label="车次ID" prop="trainId">
-          <el-input-number v-model="form.trainId" :min="1" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="车厢号" prop="carriageNumber">
-          <el-input v-model="form.carriageNumber" placeholder="如：01" />
-        </el-form-item>
-        <el-form-item label="座位号" prop="seatNumber">
-          <el-input v-model="form.seatNumber" placeholder="如：01A" />
-        </el-form-item>
-        <el-form-item label="座位类型" prop="seatType">
-          <el-select v-model="form.seatType" placeholder="请选择座位类型" style="width: 100%">
-            <el-option label="商务座" value="business" />
-            <el-option label="一等座" value="first" />
-            <el-option label="二等座" value="second" />
-            <el-option label="硬座" value="hard" />
-            <el-option label="软座" value="soft" />
-            <el-option label="硬卧" value="hard_sleeper" />
-            <el-option label="软卧" value="soft_sleeper" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="价格" prop="price">
-          <el-input-number v-model="form.price" :min="0" :precision="2" style="width: 100%" />
-        </el-form-item>
-        <el-form-item label="状态" prop="ticketStatus">
-          <el-select v-model="form.ticketStatus" placeholder="请选择状态" style="width: 100%">
-            <el-option label="可售" value="available" />
-            <el-option label="已售" value="sold" />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSave">保存</el-button>
-      </template>
-    </el-dialog>
+    <!-- 按车次查询时的提示 -->
+    <div v-else class="search-tip">
+      <el-alert type="info" :closable="false" show-icon>
+        当前显示车次 ID 为 {{ searchForm.trainId }} 的车票，共 {{ tableData.length }} 张
+      </el-alert>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Search, Refresh, Plus } from '@element-plus/icons-vue'
+import { Search, Refresh } from '@element-plus/icons-vue'
 import * as TicketApi from '@/api/TicketApi.js'
 
 const searchForm = ref({
-  find: '',
+  trainId: ''
+})
+
+const pagination = ref({
   pageNum: 1,
-  pageSize: 10
+  pageSize: 10  // 固定每页10条
 })
 
-let total = ref(0)
 const tableData = ref([])
-let dialogVisible = ref(false)
-let form = ref({
-  trainId: 1,
-  carriageNumber: '',
-  seatNumber: '',
-  seatType: 'second',
-  price: 0,
-  ticketStatus: 'available'
-})
-let formRef = ref(null)
+const total = ref(0)
+const loading = ref(false)
+const isSearchByTrainId = ref(false)
 
-const rules = {
-  trainId: [{ required: true, message: '请输入车次ID', trigger: 'blur' }],
-  carriageNumber: [{ required: true, message: '请输入车厢号', trigger: 'blur' }],
-  seatNumber: [{ required: true, message: '请输入座位号', trigger: 'blur' }],
-  seatType: [{ required: true, message: '请选择座位类型', trigger: 'change' }],
-  price: [{ required: true, message: '请输入价格', trigger: 'blur' }]
+// 座位类型映射
+const seatTypeMap = {
+  1: '商务座',
+  2: '一等座',
+  3: '二等座',
+  4: '硬座',
+  5: '软座',
+  6: '硬卧',
+  7: '软卧'
 }
 
-const seatTypeMap = {
-  business: '商务座',
-  first: '一等座',
-  second: '二等座',
-  hard: '硬座',
-  soft: '软座',
-  hard_sleeper: '硬卧',
-  soft_sleeper: '软卧'
+// 格式化价格
+const formatPrice = (price) => {
+  if (price === null || price === undefined) return '0.00'
+  return Number(price).toFixed(2)
+}
+
+// 状态标签类型
+const getTicketStatusType = (status) => {
+  if (status === '可售') return 'success'
+  if (status === '已售') return 'danger'
+  if (status === '锁定') return 'warning'
+  return 'info'
 }
 
 const getSeatTypeName = (type) => {
-  return seatTypeMap[type] || type
+  return seatTypeMap[type] || type || '未知'
 }
 
-// 加载数据
-const loadData = () => {
-  TicketApi.getTicketPage(searchForm.value).then((resp) => {
+// 加载所有车票（分页）
+const loadAllTickets = () => {
+  loading.value = true
+  const params = {
+    pageNum: pagination.value.pageNum,
+    pageSize: pagination.value.pageSize
+  }
+
+  TicketApi.getTicketPage(params).then((resp) => {
+    loading.value = false
     if (resp.code === 200 && resp.data) {
       tableData.value = resp.data.records || []
       total.value = resp.data.total || 0
+    } else {
+      ElMessage.error(resp.message || '加载数据失败')
     }
   }).catch(err => {
+    loading.value = false
+    console.error('加载数据失败:', err)
     ElMessage.error('加载数据失败')
   })
 }
 
+// 根据车次ID查询
+const loadTicketsByTrainId = (trainId) => {
+  loading.value = true
+  TicketApi.getTicketsByTrain(trainId).then((resp) => {
+    loading.value = false
+    if (resp.code === 200 && resp.data) {
+      tableData.value = resp.data || []
+      total.value = tableData.value.length
+    } else {
+      ElMessage.error(resp.message || '查询失败')
+      tableData.value = []
+      total.value = 0
+    }
+  }).catch(err => {
+    loading.value = false
+    console.error('查询失败:', err)
+    ElMessage.error('查询失败')
+    tableData.value = []
+    total.value = 0
+  })
+}
+
+// 查询（根据是否有车次ID决定调用哪个接口）
+const handleSearch = () => {
+  if (searchForm.value.trainId) {
+    isSearchByTrainId.value = true
+    loadTicketsByTrainId(searchForm.value.trainId)
+  } else {
+    isSearchByTrainId.value = false
+    pagination.value.pageNum = 1
+    loadAllTickets()
+  }
+}
+
 // 重置搜索
 const handleReset = () => {
-  searchForm.value = {
-    find: '',
-    pageNum: 1,
-    pageSize: 10
-  }
-  loadData()
-}
-
-// 新增
-const handleAdd = () => {
-  dialogVisible.value = true
-  form.value = {
-    trainId: 1,
-    carriageNumber: '',
-    seatNumber: '',
-    seatType: 'second',
-    price: 0,
-    ticketStatus: 'available'
-  }
-}
-
-// 编辑
-const handleEdit = (row) => {
-  dialogVisible.value = true
-  form.value = JSON.parse(JSON.stringify(row))
-}
-
-// 保存
-const handleSave = () => {
-  formRef.value.validate().then(() => {
-    const apiCall = form.value.ticketId ? TicketApi.updateTicket : TicketApi.addTicket
-    apiCall(form.value).then(() => {
-      ElMessage.success('保存成功')
-      dialogVisible.value = false
-      loadData()
-    }).catch(err => {
-      ElMessage.error('保存失败')
-    })
-  })
-}
-
-// 删除
-const handleDelete = (id) => {
-  TicketApi.deleteTicket(id).then(() => {
-    ElMessage.success('删除成功')
-    loadData()
-  }).catch(err => {
-    ElMessage.error('删除失败')
-  })
+  searchForm.value.trainId = ''
+  isSearchByTrainId.value = false
+  pagination.value.pageNum = 1
+  loadAllTickets()
 }
 
 onMounted(() => {
-  loadData()
+  loadAllTickets()
 })
 </script>
 
@@ -260,15 +221,11 @@ onMounted(() => {
   flex: 1;
 }
 
-.action-buttons {
-  margin-left: 20px;
-}
-
 .table-container {
   background: white;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  overflow: hidden;
+  overflow: auto;
 }
 
 .mgt-4 {
@@ -278,5 +235,9 @@ onMounted(() => {
 .el-pagination {
   padding: 16px;
   text-align: right;
+}
+
+.search-tip {
+  margin-top: 16px;
 }
 </style>
