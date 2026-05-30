@@ -67,6 +67,20 @@ export function getSalesByTicket(ticketId) {
     return get(`/api/v1/sale/ticket/${ticketId}`)
 }
 
+/**
+ * 分页查询所有已售票（含车票详情、车次号、用户ID、票价）
+ */
+export function getSoldTickets(params) {
+    return post('/api/v1/sale/sold/page', params)
+}
+
+/**
+ * 根据车票ID查询站点详情（出发站、到达站、上车时间、到达时间）
+ */
+export function getStationDetailByTicket(ticketId) {
+    return post('/api/v1/ticket/station-detail', { ticketId })
+}
+
 // ==================== 退票列表接口 ====================
 
 // 查询所有退票记录（管理员）
@@ -77,6 +91,10 @@ export function getAllRefunds(params) {
 // 根据售票记录ID查询退票记录
 export function getRefundBySale(saleId) {
     return get(`/api/v1/refund/sale/${saleId}`)
+}
+
+export function getRefundDetail(refundId) {
+    return post('/api/v1/refund/detail', { refundId })
 }
 
 // ==================== 站点管理接口 ====================

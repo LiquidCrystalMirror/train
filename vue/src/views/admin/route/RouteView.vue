@@ -88,7 +88,7 @@
               <el-option
                   v-for="station in connectedStations"
                   :key="station.stationId"
-                  :label="`${station.stationName} (行程: ${formatDuration(station.travelTimeMinutes)})`"
+                  :label="station.stationName"
                   :value="station.stationId"
               />
             </el-select>
@@ -114,14 +114,6 @@
           <el-table :data="routeForm.stations" border max-height="300">
             <el-table-column prop="stationSeq" label="序号" width="80" align="center" />
             <el-table-column prop="stationName" label="站点名称" align="center" />
-            <el-table-column label="行程时间" width="120" align="center">
-              <template #default="{ row, $index }">
-                <span v-if="$index > 0">
-                  {{ formatDuration(row.travelTimeFromPrev) }}
-                </span>
-                <span v-else>起始站</span>
-              </template>
-            </el-table-column>
             <el-table-column prop="stayMinutes" label="停留(分钟)" width="120" align="center">
               <template #default="{ row }">
                 <el-input-number v-model="row.stayMinutes" :min="0" size="small" />
@@ -144,7 +136,7 @@
       </template>
     </el-dialog>
 
-    <!-- 路线详情对话框 -->
+    <!-- 路线详情对话框（保留行程时间显示） -->
     <el-dialog v-model="detailDialogVisible" title="路线详情" width="600px">
       <el-descriptions :column="1" border>
         <el-descriptions-item label="路线名称">{{ currentRouteName || '-' }}</el-descriptions-item>
@@ -238,6 +230,22 @@ const formatDuration = (minutes) => {
   return remainMins === 0 ? `${hours}小时` : `${hours}小时${remainMins}分钟`
 }
 
+// 获取两个站点之间的行程时间
+const getTravelTimeBetweenStations = async (stationAId, stationBId) => {
+  try {
+    const res = await stationApi.getNeighbors(stationAId)
+    if (res?.code === 200) {
+      const neighbor = res.data.find(n =>
+          (n.neighborStationId === stationBId || n.stationId === stationBId)
+      )
+      return neighbor?.travelTimeMinutes || 0
+    }
+    return 0
+  } catch (error) {
+    return 0
+  }
+}
+
 // 检查两个站点是否连通
 const checkStationsConnected = async (stationAId, stationBId) => {
   if (!stationAId || !stationBId) return false
@@ -322,7 +330,7 @@ const addInitialStation = async () => {
   await loadConnectedStations()
 }
 
-// 【关键修复】加载连通站点 - 适配正确的字段名
+// 加载连通站点
 const loadConnectedStations = async () => {
   console.log('=== loadConnectedStations 开始 ===')
 
@@ -343,28 +351,22 @@ const loadConnectedStations = async () => {
       const neighbors = res.data || []
       console.log('原始邻居数据:', neighbors)
 
-      // 【关键】适配字段名：可能是 neighborStationId 或 stationId
       const enriched = []
       for (const neighbor of neighbors) {
-        // 尝试多种可能的字段名
         let neighborId = neighbor.neighborStationId || neighbor.stationId || neighbor.neighbor_station_id
-        let travelTime = neighbor.travelTimeMinutes || neighbor.travel_time_minutes || 0
-
-        console.log(`解析邻居: neighborId=${neighborId}, travelTime=${travelTime}`)
 
         if (neighborId) {
           const fullStation = allStations.value.find(s => s.stationId === neighborId)
           enriched.push({
             stationId: neighborId,
             stationName: fullStation?.stationName || `站点${neighborId}`,
-            travelTimeMinutes: travelTime
+            travelTimeMinutes: 0
           })
         }
       }
 
       console.log('补充名称后的邻居:', enriched)
 
-      // 过滤掉已经在路线中的站点
       const existingIds = routeForm.value.stations.map(s => s.stationId)
       const filtered = enriched.filter(n => !existingIds.includes(n.stationId))
 
@@ -388,7 +390,6 @@ const loadConnectedStations = async () => {
 const addStation = async () => {
   if (!selectedStation.value) return
 
-  // 验证连通性
   const isConnected = await checkStationsConnected(
       lastStation.value.stationId,
       selectedStation.value
@@ -416,7 +417,7 @@ const addStation = async () => {
     stationName: station.stationName,
     stationSeq: routeForm.value.stations.length + 1,
     stayMinutes: 0,
-    travelTimeFromPrev: neighbor.travelTimeMinutes || 0
+    travelTimeFromPrev: 0
   })
 
   selectedStation.value = null
@@ -441,7 +442,6 @@ const saveRoute = async () => {
     return
   }
 
-  // 验证所有站点的连通性
   for (let i = 1; i < routeForm.value.stations.length; i++) {
     const prevStation = routeForm.value.stations[i - 1]
     const currStation = routeForm.value.stations[i]
@@ -501,6 +501,7 @@ const viewRouteDetail = async (routerId) => {
       currentCreateTime.value = data.createTime
       currentTotalDuration.value = data.totalDuration ?? null
 
+      // 计算每个站点的行程时间
       const stationsWithTravelTime = []
       for (let i = 0; i < (data.stations || []).length; i++) {
         const station = data.stations[i]
@@ -509,17 +510,16 @@ const viewRouteDetail = async (routerId) => {
 
         if (i > 0) {
           const prevStation = data.stations[i - 1]
-          const travelTime = await getTravelTimeBetweenStations(
+          travelTimeFromPrev = await getTravelTimeBetweenStations(
               prevStation.stationId,
               station.stationId
           )
-          travelTimeFromPrev = travelTime
         }
 
         stationsWithTravelTime.push({
           ...station,
           stationName: found ? found.stationName : `站点${station.stationId}`,
-          travelTimeFromPrev
+          travelTimeFromPrev: travelTimeFromPrev
         })
       }
 
@@ -586,22 +586,6 @@ const deleteRouteHandler = async (routerId) => {
       console.error('删除失败:', error)
       ElMessage.error('删除失败')
     }
-  }
-}
-
-// 获取两个站点之间的行程时间（简化版）
-const getTravelTimeBetweenStations = async (stationAId, stationBId) => {
-  try {
-    const res = await stationApi.getNeighbors(stationAId)
-    if (res?.code === 200) {
-      const neighbor = res.data.find(n =>
-          (n.neighborStationId === stationBId || n.stationId === stationBId)
-      )
-      return neighbor?.travelTimeMinutes || 0
-    }
-    return 0
-  } catch (error) {
-    return 0
   }
 }
 
