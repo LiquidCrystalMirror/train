@@ -8,10 +8,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.annotation.Resource;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/sale")
@@ -34,14 +34,20 @@ public class SaleController {
     }
 
     /**
-     * 计算票价接口
+     * 计算票价接口（售前预估，按座位类型计价，无需 ticketId）
      */
     @PostMapping("/calculate-price")
-    public ApiResult<Double> calculatePrice(@RequestParam Integer trainId,
-                                            @RequestParam Integer ticketId,
-                                            @RequestParam Integer startStationSeq,
-                                            @RequestParam Integer endStationSeq) {
-        Double price = saleService.calculatePrice(trainId, ticketId, startStationSeq, endStationSeq);
+    public ApiResult<Double> calculatePrice(@RequestBody Map<String, Object> params) {
+        Integer trainId = params.get("trainId") != null ?
+                ((Number) params.get("trainId")).intValue() : null;
+        Long seatType = params.get("seatType") != null ?
+                ((Number) params.get("seatType")).longValue() : null;
+        Integer startStationSeq = params.get("startStationSeq") != null ?
+                ((Number) params.get("startStationSeq")).intValue() : null;
+        Integer endStationSeq = params.get("endStationSeq") != null ?
+                ((Number) params.get("endStationSeq")).intValue() : null;
+
+        Double price = saleService.calculatePrice(trainId, seatType, startStationSeq, endStationSeq);
         return ApiResult.success("计算成功", price);
     }
 }

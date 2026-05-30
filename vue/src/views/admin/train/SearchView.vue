@@ -110,8 +110,8 @@
         </el-table-column>
         <el-table-column prop="ticketStatus" label="状态" align="center">
           <template #default="scope">
-            <el-tag :type="scope.row.ticketStatus === 'available' ? 'success' : 'info'">
-              {{ scope.row.ticketStatus === 'available' ? '可售' : '已售' }}
+            <el-tag :type="scope.row.ticketStatus === '可售' ? 'success' : 'info'">
+              {{ scope.row.ticketStatus || '未知' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -120,7 +120,7 @@
             <el-button 
               size="small" 
               type="primary" 
-              :disabled="scope.row.ticketStatus !== 'available'"
+              :disabled="scope.row.ticketStatus !== '可售'"
               @click="handleBuyTicket(scope.row)"
             >
               购买
@@ -161,15 +161,11 @@ const formatDateTime = (dateTime) => {
 // 获取座位类型文本
 const getSeatTypeText = (type) => {
   const map = {
-    'business': '商务座',
-    'first': '一等座',
-    'second': '二等座',
-    'hard': '硬座',
-    'soft': '软座',
-    'hard_sleeper': '硬卧',
-    'soft_sleeper': '软卧'
+    0: '二等座',
+    1: '一等座',
+    2: '商务座'
   }
-  return map[type] || type
+  return map[type] || '未知类型' + type
 }
 
 // 查询车次

@@ -559,10 +559,10 @@ const handleBuyClick = async (item) => {
   calculatedPrice.value = null
 
   try {
-    // 调用票价计算接口 - 注意参数顺序和传递方式
+    // 调用票价计算接口 - 传入 seatType 而非 ticketId（库存是聚合数据，没有单个 ticketId）
     const resp = await calculatePrice(
         currentSchedule.value.trainId,  // trainId
-        item.ticketId,                   // ticketId
+        item.seatType,                   // seatType（座位类型编码 0/1/2）
         startStationSeq.value,          // startStationSeq
         endStationSeq.value             // endStationSeq
     )

@@ -120,17 +120,12 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
     }
 
     @Override
-    public Double calculatePrice(Integer trainId, Integer ticketId, Integer startStationSeq, Integer endStationSeq) {
-        if (trainId == null || ticketId == null || startStationSeq == null || endStationSeq == null) {
+    public Double calculatePrice(Integer trainId, Long seatType, Integer startStationSeq, Integer endStationSeq) {
+        if (trainId == null || seatType == null || startStationSeq == null || endStationSeq == null) {
             throw new BusinessException("参数不能为空");
         }
         if (startStationSeq >= endStationSeq) {
             throw new BusinessException("上车站点序号必须小于下车站点序号");
-        }
-
-        TicketInfo ticket = ticketInfoMapper.selectById(ticketId);
-        if (ticket == null) {
-            throw new BusinessException("车票不存在");
         }
 
         int stationCount = endStationSeq - startStationSeq + 1;
@@ -139,11 +134,11 @@ public class SaleServiceImpl extends ServiceImpl<SaleInfoMapper, SaleInfo> imple
             throw new BusinessException("未找到该列车的价格策略，站点数：" + stationCount);
         }
 
-        SeatTypeEnum seatType = SeatTypeEnum.fromCode(ticket.getSeatType());
-        if (seatType == null) {
-            throw new BusinessException("未知的座位类型：" + ticket.getSeatType());
+        SeatTypeEnum seatTypeEnum = SeatTypeEnum.fromCode(seatType);
+        if (seatTypeEnum == null) {
+            throw new BusinessException("未知的座位类型：" + seatType);
         }
 
-        return basePrice * seatType.getPriceMultiplier();
+        return basePrice * seatTypeEnum.getPriceMultiplier();
     }
 }
