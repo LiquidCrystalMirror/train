@@ -7,9 +7,9 @@ import java.util.Map;
 
 @Getter
 public enum SeatTypeEnum {
-    SECOND_CLASS(0L, "二等座", 1.0),
-    FIRST_CLASS(1L, "一等座", 1.2),
-    BUSINESS_CLASS(2L, "商务座", 1.5);
+    SECOND_CLASS(1L, "二等座", 1.0),
+    FIRST_CLASS(2L, "一等座", 1.2),
+    BUSINESS_CLASS(3L, "商务座", 1.5);
 
     private final Long code;
     private final String description;

@@ -188,7 +188,7 @@
             <el-button
                 size="small"
                 type="primary"
-                :disabled="scope.row.remainingCount <= 0 || priceCalculating"
+                :disabled="scope.row.remainingCount <= 0"
                 @click="handleBuyClick(scope.row)"
             >
               购买
@@ -204,7 +204,7 @@
 
     <!-- 购票确认对话框 -->
     <el-dialog title="确认购票" v-model="buyDialogVisible" width="480px" @close="resetBuyDialog">
-      <div v-if="buyingItem" v-loading="priceCalculating">
+      <div v-if="buyingItem">
         <el-descriptions :column="1" border>
           <el-descriptions-item label="车次">
             <span style="font-weight: bold; color: #409eff;">{{ currentTrainNumber }}</span>
@@ -216,10 +216,9 @@
           <el-descriptions-item label="出发站">{{ getStartStationDisplay() }}（第{{ startStationSeq }}站）</el-descriptions-item>
           <el-descriptions-item label="到达站">{{ getEndStationDisplay() }}（第{{ endStationSeq }}站）</el-descriptions-item>
           <el-descriptions-item label="票价">
-            <span v-if="calculatedPrice !== null" style="color: #e6a23c; font-weight: bold; font-size: 18px;">
+            <span style="color: #e6a23c; font-weight: bold; font-size: 18px;">
               ¥{{ formatPrice(calculatedPrice) }}
             </span>
-            <span v-else style="color: #909399;">计算中...</span>
           </el-descriptions-item>
           <el-descriptions-item label="剩余票数">
             <el-tag :type="buyingItem.remainingCount > 0 ? 'success' : 'danger'" size="small">
@@ -495,7 +494,7 @@ const handleReset = () => {
   searched.value = false
 }
 
-// 查看余票（库存聚合）
+// 查看余票（库存聚合 + 票价预计算）
 const viewTickets = async (schedule) => {
   currentTrainNumber.value = schedule.trainNumber
   currentDepartureTimeStr.value = schedule.departureTimeStr
@@ -504,22 +503,41 @@ const viewTickets = async (schedule) => {
   ticketLoading.value = true
 
   try {
-    const resp = await getTicketInventory(schedule.trainId, schedule.departureTime)
-    if (resp.code === 200) {
-      inventoryList.value = resp.data || []
+    // 并行获取库存和路线站点
+    const [invResp, routeResp] = await Promise.all([
+      getTicketInventory(schedule.trainId, schedule.departureTime),
+      schedule.routerId ? getRouteStations(schedule.routerId) : Promise.resolve(null)
+    ])
+
+    if (invResp.code === 200) {
+      inventoryList.value = invResp.data || []
     } else {
-      ElMessage.error(resp.message || '查询库存失败')
+      ElMessage.error(invResp.message || '查询库存失败')
+      return
     }
 
-    if (schedule.routerId) {
-      const routeResp = await getRouteStations(schedule.routerId)
-      if (routeResp.code === 200) {
-        const stations = routeResp.data || []
-        const startSt = stations.find(s => s.stationId === searchForm.value.startStationId)
-        const endSt = stations.find(s => s.stationId === searchForm.value.endStationId)
-        startStationSeq.value = startSt ? startSt.stationSeq : 0
-        endStationSeq.value = endSt ? endSt.stationSeq : 0
-      }
+    // 计算站点序号
+    if (routeResp && routeResp.code === 200) {
+      const stations = routeResp.data || []
+      const startSt = stations.find(s => s.stationId === searchForm.value.startStationId)
+      const endSt = stations.find(s => s.stationId === searchForm.value.endStationId)
+      startStationSeq.value = startSt ? startSt.stationSeq : 0
+      endStationSeq.value = endSt ? endSt.stationSeq : 0
+    }
+
+    // 批量预计算票价
+    if (startStationSeq.value > 0 && endStationSeq.value > 0 && startStationSeq.value < endStationSeq.value) {
+      const pricePromises = inventoryList.value.map(item =>
+        calculatePrice(schedule.trainId, item.seatType, startStationSeq.value, endStationSeq.value)
+          .then(resp => resp.code === 200 ? resp.data : null)
+          .catch(() => null)
+      )
+      const prices = await Promise.all(pricePromises)
+      // 将预计算的价格注入到库存数据中
+      inventoryList.value = inventoryList.value.map((item, idx) => ({
+        ...item,
+        price: prices[idx]
+      }))
     }
   } catch (error) {
     console.error('查询库存失败:', error)
@@ -541,8 +559,7 @@ const resetBuyDialog = () => {
   priceCalculating.value = false
 }
 
-// 点击购买按钮 - 先计算价格
-// 修改 handleBuyClick 函数中的票价计算部分
+// 点击购买按钮 - 直接使用预计算的票价
 const handleBuyClick = async (item) => {
   if (startStationSeq.value <= 0 || endStationSeq.value <= 0) {
     ElMessage.warning('无法确定站点序号，请重新查询')
@@ -555,34 +572,8 @@ const handleBuyClick = async (item) => {
 
   buyingItem.value = item
   buyDialogVisible.value = true
-  priceCalculating.value = true
-  calculatedPrice.value = null
-
-  try {
-    // 调用票价计算接口 - 传入 seatType 而非 ticketId（库存是聚合数据，没有单个 ticketId）
-    const resp = await calculatePrice(
-        currentSchedule.value.trainId,  // trainId
-        item.seatType,                   // seatType（座位类型编码 0/1/2）
-        startStationSeq.value,          // startStationSeq
-        endStationSeq.value             // endStationSeq
-    )
-
-    console.log('票价计算结果:', resp)
-
-    if (resp.code === 200) {
-      // 根据实际返回结构调整
-      calculatedPrice.value = resp.data || resp.price || 0
-    } else {
-      ElMessage.error(resp.message || '票价计算失败')
-      buyDialogVisible.value = false
-    }
-  } catch (error) {
-    console.error('票价计算失败:', error)
-    ElMessage.error('票价计算失败：' + (error.message || '未知错误'))
-    buyDialogVisible.value = false
-  } finally {
-    priceCalculating.value = false
-  }
+  // 票价已在 viewTickets 中预计算，直接使用 item.price
+  calculatedPrice.value = item.price || null
 }
 
 // 确认购买

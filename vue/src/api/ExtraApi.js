@@ -142,7 +142,7 @@ export function checkPriceComplete(trainId, totalStationCount) {
 }
 
 // 计算票价（售前预估，按座位类型 + 站点序号计算）
-// 参数：trainId, seatType(0/1/2), startStationSeq, endStationSeq
+// 参数：trainId, seatType（1=二等座, 2=一等座, 3=商务座）, startStationSeq, endStationSeq
 export function calculatePrice(trainId, seatType, startStationSeq, endStationSeq) {
     return post('/api/v1/sale/calculate-price', { trainId, seatType, startStationSeq, endStationSeq })
 }

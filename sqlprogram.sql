@@ -192,7 +192,7 @@ CREATE TABLE `ticket_inventory`  (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '代理主键',
   `train_id` int NOT NULL COMMENT '车次ID',
   `departure_time` datetime NOT NULL COMMENT '发车时间',
-  `seat_type` bigint NOT NULL COMMENT '座位类型(0/1/2)',
+  `seat_type` bigint NOT NULL COMMENT '座位类型(1=二等座,2=一等座,3=商务座)',
   `total_count` int NOT NULL DEFAULT 0 COMMENT '总票数',
   `sold_count` int NOT NULL DEFAULT 0 COMMENT '已售数量',
   `remaining_count` int NOT NULL DEFAULT 0 COMMENT '剩余数量',

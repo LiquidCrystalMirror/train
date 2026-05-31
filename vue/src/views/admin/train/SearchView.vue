@@ -161,9 +161,9 @@ const formatDateTime = (dateTime) => {
 // 获取座位类型文本
 const getSeatTypeText = (type) => {
   const map = {
-    0: '二等座',
-    1: '一等座',
-    2: '商务座'
+    1: '二等座',
+    2: '一等座',
+    3: '商务座'
   }
   return map[type] || '未知类型' + type
 }

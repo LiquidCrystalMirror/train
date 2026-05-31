@@ -35,6 +35,7 @@ public class SaleController {
 
     /**
      * 计算票价接口（售前预估，按座位类型计价，无需 ticketId）
+     * seatType: 1=二等座, 2=一等座, 3=商务座
      */
     @PostMapping("/calculate-price")
     public ApiResult<Double> calculatePrice(@RequestBody Map<String, Object> params) {

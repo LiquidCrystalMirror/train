@@ -13,7 +13,7 @@ public class TicketInventory {
     
     private Integer trainId;
     private LocalDateTime departureTime;
-    private Long seatType;       // 座位类型编码（0/1/2）
+    private Long seatType;       // 座位类型编码（1=二等座, 2=一等座, 3=商务座）
     private Integer totalCount;
     private Integer soldCount;
     private Integer remainingCount;

@@ -45,6 +45,13 @@ public class RefundServiceImpl extends ServiceImpl<RefundInfoMapper, RefundInfo>
         TicketInfo ticket = ticketInfoMapper.selectById(saleInfo.getTicketId());
         if (ticket == null) throw new BusinessException("车票不存在");
 
+        // 2.5 发车前30分钟禁止退票
+        if (ticket.getDepartureTime() != null) {
+            if (LocalDateTime.now().plusMinutes(30).isAfter(ticket.getDepartureTime())) {
+                throw new BusinessException("发车前30分钟内不可退票");
+            }
+        }
+
         // 3. 恢复库存
         int rows = inventoryMapper.restoreStock(
                 ticket.getTrainId(),
