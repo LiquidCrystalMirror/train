@@ -4,7 +4,7 @@
       <template #header>
         <div class="card-header">
           <h3>退票</h3>
-          <span class="subtitle">可退票的订单（发车前可退票）</span>
+          <span class="subtitle">可退票的订单（发车前30分钟以上可退票）</span>
         </div>
       </template>
 
@@ -17,11 +17,12 @@
             style="width: 100%"
             v-loading="loading"
             empty-text="暂无可退票的订单"
+            :fit="true"
         >
-          <el-table-column prop="saleId" label="订单ID" align="center" width="100" />
+          <el-table-column prop="saleId" label="订单ID" align="center" min-width="100" />
           <el-table-column prop="trainNumber" label="车次号" align="center" min-width="100" />
-          <el-table-column prop="carriageNumber" label="车厢号" align="center" width="80" />
-          <el-table-column prop="seatNumber" label="座位号" align="center" width="80" />
+          <el-table-column prop="carriageNumber" label="车厢号" align="center" min-width="80" />
+          <el-table-column prop="seatNumber" label="座位号" align="center" min-width="80" />
           <el-table-column prop="startStationName" label="出发站" align="center" min-width="120" />
           <el-table-column prop="startArrivalTime" label="上车时间" align="center" min-width="160">
             <template #default="scope">
@@ -34,12 +35,12 @@
               <span style="color: #67c23a; font-weight: 500;">{{ formatDateTime(scope.row.endArrivalTime) }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="seatType" label="座位类型" align="center" width="100">
+          <el-table-column prop="seatType" label="座位类型" align="center" min-width="100">
             <template #default="scope">
               <el-tag size="small" type="info">{{ getSeatTypeText(scope.row.seatType) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="price" label="票价" align="center" width="100">
+          <el-table-column prop="price" label="票价" align="center" min-width="100">
             <template #default="scope">
               <span style="color: #e6a23c; font-weight: bold;">¥{{ formatPrice(scope.row.price) }}</span>
             </template>
@@ -49,7 +50,7 @@
               {{ formatDateTime(scope.row.saleTime) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" align="center" width="100" fixed="right">
+          <el-table-column label="操作" align="center" min-width="100" fixed="right">
             <template #default="scope">
               <el-button
                   size="small"
@@ -132,7 +133,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Warning, Close } from '@element-plus/icons-vue'
+import { Warning } from '@element-plus/icons-vue'
 import { refundTicket } from '@/api/RefundApi.js'
 import { getUserPurchasePage } from '@/api/ExtraApi.js'
 import authService from '@/service/AuthService.js'
@@ -170,10 +171,11 @@ const formatPrice = (price) => {
 // 格式化日期时间
 const formatDateTime = (dateTime) => {
   if (!dateTime) return '-'
+  // 统一替换 T 为空格，并截取到秒
   return dateTime.replace('T', ' ').substring(0, 19)
 }
 
-// 处理订单记录
+// 处理订单记录，补充站点名称和发车时间
 const processOrderRecord = (record) => {
   return {
     ...record,
@@ -181,6 +183,34 @@ const processOrderRecord = (record) => {
     endStationName: record.endStationName || `站点${record.endStationSeq}`,
     startArrivalTime: record.startArrivalTime || record.departureTime,
     endArrivalTime: record.endArrivalTime || record.departureTime
+  }
+}
+
+/**
+ * 检查订单是否可退票（发车前30分钟以上）
+ * @param {Object} order 订单对象
+ * @returns {boolean} true=可退票，false=不可退票
+ */
+const isRefundable = (order) => {
+  if (!order.startArrivalTime) return false
+
+  try {
+    const now = new Date()
+    const departureTime = new Date(order.startArrivalTime)
+
+    // 如果发车时间已过，不可退票
+    if (departureTime <= now) return false
+
+    // 计算时间差（毫秒）
+    const timeDiff = departureTime - now
+    // 30分钟对应的毫秒数
+    const thirtyMinutes = 30 * 60 * 1000
+
+    // 如果距离发车时间不足30分钟，不可退票
+    return timeDiff >= thirtyMinutes
+  } catch (error) {
+    console.error('检查退票时间失败:', error)
+    return false
   }
 }
 
@@ -203,10 +233,20 @@ const loadOrderList = async () => {
 
     if (resp.code === 200 && resp.data) {
       const records = resp.data.records || []
-      // 只显示已出票的订单（可退票）
-      const availableRecords = records.filter(item => item.saleStatus === '已出票')
-      orderList.value = availableRecords.map(processOrderRecord)
-      total.value = resp.data.total || 0
+      // 1. 先筛选出状态为“已出票”的订单
+      let availableRecords = records.filter(item => item.saleStatus === '已出票')
+      // 2. 处理订单记录，补充必要字段
+      let processedRecords = availableRecords.map(processOrderRecord)
+      // 3. 再根据发车时间筛选可退票的订单（距离发车时间 >= 30分钟）
+      const refundableRecords = processedRecords.filter(order => isRefundable(order))
+
+      orderList.value = refundableRecords
+      total.value = refundableRecords.length  // 注意：这里显示的是过滤后的数量，如需显示原始总数可保留 resp.data.total
+
+      // 可选：如果过滤后数量为0但原始有订单，可给出提示
+      if (availableRecords.length > 0 && refundableRecords.length === 0) {
+        ElMessage.info('当前没有距离发车时间超过30分钟的订单，无法退票')
+      }
     } else {
       ElMessage.error(resp.message || '加载订单失败')
     }
@@ -220,6 +260,11 @@ const loadOrderList = async () => {
 
 // 退票
 const handleRefund = (order) => {
+  // 二次确认时间限制，防止前端时间差异
+  if (!isRefundable(order)) {
+    ElMessage.warning('该订单距离发车时间不足30分钟，无法退票')
+    return
+  }
   currentRefundOrder.value = order
   confirmDialogVisible.value = true
 }
@@ -227,6 +272,14 @@ const handleRefund = (order) => {
 // 执行退票
 const executeRefund = async () => {
   if (!currentRefundOrder.value) return
+
+  // 再次校验时间限制
+  if (!isRefundable(currentRefundOrder.value)) {
+    ElMessage.warning('该订单距离发车时间不足30分钟，无法退票')
+    confirmDialogVisible.value = false
+    currentRefundOrder.value = null
+    return
+  }
 
   refunding.value = true
   refundingId.value = currentRefundOrder.value.saleId
@@ -330,5 +383,27 @@ onMounted(() => {
 :deep(.el-table th) {
   background-color: #f5f7fa;
   font-weight: 600;
+}
+
+/* 隐藏表格滚动条 */
+.order-list-section {
+  overflow-x: auto;
+}
+
+.order-list-section::-webkit-scrollbar {
+  display: none;
+}
+
+.order-list-section {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+:deep(.el-table__body-wrapper) {
+  overflow-x: hidden !important;
+}
+
+:deep(.el-table) {
+  overflow-x: auto;
 }
 </style>

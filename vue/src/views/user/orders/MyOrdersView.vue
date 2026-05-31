@@ -4,7 +4,14 @@
       <!-- 我的购票记录 -->
       <el-tab-pane label="我的购票" name="purchases">
         <div class="table-container">
-          <el-table :data="purchaseList" stripe border style="width: 100%" v-loading="purchaseLoading">
+          <el-table
+              :data="purchaseList"
+              stripe
+              border
+              style="width: 100%"
+              v-loading="purchaseLoading"
+              :fit="true"
+          >
             <el-table-column prop="trainNumber" label="车次号" align="center" min-width="100" />
             <el-table-column prop="carriageNumber" label="车厢号" align="center" width="80" />
             <el-table-column prop="seatNumber" label="座位号" align="center" width="80" />
@@ -165,6 +172,17 @@ onMounted(() => {
 
 .table-container {
   margin-top: 16px;
+  overflow-x: auto;
+}
+
+/* 隐藏滚动条但保留功能（可选，如果需要完全禁止滚动条可以注释掉 overflow-x 属性） */
+.table-container::-webkit-scrollbar {
+  display: none;
+}
+
+.table-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 .pagination {
@@ -179,5 +197,14 @@ onMounted(() => {
 :deep(.el-table th) {
   background-color: #f5f7fa;
   font-weight: 600;
+}
+
+/* 确保表格不出现滚动条 */
+:deep(.el-table__body-wrapper) {
+  overflow-x: hidden;
+}
+
+:deep(.el-table) {
+  overflow-x: auto;
 }
 </style>
